@@ -1,0 +1,15 @@
+services:
+  postgres:
+    image: postgres:16
+    container_name: tfg_postgres
+    environment:
+      POSTGRES_DB: tfg_siem
+      POSTGRES_USER: tfg_user
+      POSTGRES_PASSWORD: tfg_pass
+    ports:
+      - "5432:5432"
+    volumes:
+      - tfg_postgres_data:/var/lib/postgresql/data
+
+volumes:
+  tfg_postgres_data:
