@@ -4,7 +4,8 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.tfg.siem.dto.CreateLogRequest;
 import com.tfg.siem.dto.LogResponse;
-import com.tfg.siem.exception.*;
+import com.tfg.siem.exception.BadRequestException;
+import com.tfg.siem.exception.ResourceNotFoundException;
 import com.tfg.siem.model.Company;
 import com.tfg.siem.model.Log;
 import com.tfg.siem.model.Source;
@@ -12,7 +13,9 @@ import com.tfg.siem.repository.CompanyRepository;
 import com.tfg.siem.repository.LogRepository;
 import com.tfg.siem.repository.SourceRepository;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDateTime;
 import java.util.List;
 
 @Service
@@ -22,18 +25,22 @@ public class LogService {
     private final CompanyRepository companyRepository;
     private final SourceRepository sourceRepository;
     private final ObjectMapper objectMapper;
+    private final AlertService alertService;
 
     public LogService(
             LogRepository logRepository,
             CompanyRepository companyRepository,
             SourceRepository sourceRepository,
-            ObjectMapper objectMapper) {
+            ObjectMapper objectMapper,
+            AlertService alertService) {
         this.logRepository = logRepository;
         this.companyRepository = companyRepository;
         this.sourceRepository = sourceRepository;
         this.objectMapper = objectMapper;
+        this.alertService = alertService;
     }
 
+    @Transactional
     public LogResponse createLog(CreateLogRequest request) {
         Company company = companyRepository.findById(request.getCompanyId())
                 .orElseThrow(
@@ -64,12 +71,27 @@ public class LogService {
         }
 
         Log savedLog = logRepository.save(log);
+        alertService.createCriticalAlertIfNeeded(savedLog);
+
         return mapToResponse(savedLog);
     }
 
-    public List<LogResponse> getLogsByCompany(Long companyId) {
-        return logRepository.findByCompanyId(companyId)
-                .stream()
+    @Transactional(readOnly = true)
+    public List<LogResponse> getLogsByCompany(Long companyId, String start, String end) {
+        companyRepository.findById(companyId)
+                .orElseThrow(() -> new ResourceNotFoundException("Company not found with id: " + companyId));
+
+        List<Log> logs;
+
+        if (start != null && end != null) {
+            LocalDateTime startDate = LocalDateTime.parse(start);
+            LocalDateTime endDate = LocalDateTime.parse(end);
+            logs = logRepository.findByCompanyIdAndTimestampBetween(companyId, startDate, endDate);
+        } else {
+            logs = logRepository.findByCompanyId(companyId);
+        }
+
+        return logs.stream()
                 .map(this::mapToResponse)
                 .toList();
     }

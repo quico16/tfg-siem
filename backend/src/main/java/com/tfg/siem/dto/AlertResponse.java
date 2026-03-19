@@ -1,0 +1,85 @@
+package com.tfg.siem.dto;
+
+import com.tfg.siem.model.AlertStatus;
+import com.tfg.siem.model.LogLevel;
+
+import java.time.LocalDateTime;
+
+public class AlertResponse {
+
+    private Long id;
+    private Long companyId;
+    private String companyName;
+    private Long logId;
+    private LogLevel severity;
+    private String message;
+    private AlertStatus status;
+    private LocalDateTime createdAt;
+
+    public AlertResponse() {
+    }
+
+    public Long getId() {
+        return id;
+    }
+
+    public Long getCompanyId() {
+        return companyId;
+    }
+
+    public String getCompanyName() {
+        return companyName;
+    }
+
+    public Long getLogId() {
+        return logId;
+    }
+
+    public LogLevel getSeverity() {
+        return severity;
+    }
+
+    public String getMessage() {
+        return message;
+    }
+
+    public AlertStatus getStatus() {
+        return status;
+    }
+
+    public LocalDateTime getCreatedAt() {
+        return createdAt;
+    }
+
+    public void setId(Long id) {
+        this.id = id;
+    }
+
+    public void setCompanyId(Long companyId) {
+        this.companyId = companyId;
+    }
+
+    public void setCompanyName(String companyName) {
+        this.companyName = companyName;
+    }
+
+    public void setLogId(Long logId) {
+        this.logId = logId;
+    }
+
+    public void setSeverity(LogLevel severity) {
+        this.severity = severity;
+    }
+
+    public void setMessage(String message) {
+        this.message = message;
+    }
+
+    public void setStatus(AlertStatus status) {
+        this.status = status;
+    }
+
+    public void setCreatedAt(LocalDateTime createdAt) {
+        this.createdAt = createdAt;
+    }
+}
