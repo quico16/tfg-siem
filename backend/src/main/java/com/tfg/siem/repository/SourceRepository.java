@@ -10,4 +10,6 @@ public interface SourceRepository extends JpaRepository<Source, Long> {
 
     @Query("SELECT s FROM Source s JOIN FETCH s.company WHERE s.company.id = :companyId")
     List<Source> findByCompanyId(Long companyId);
+
+    long countByCompanyId(Long companyId);
 }
