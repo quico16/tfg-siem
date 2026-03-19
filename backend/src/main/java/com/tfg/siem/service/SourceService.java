@@ -1,6 +1,7 @@
 package com.tfg.siem.service;
 
 import com.tfg.siem.dto.CreateSourceRequest;
+import com.tfg.siem.exception.ResourceNotFoundException;
 import com.tfg.siem.model.Company;
 import com.tfg.siem.model.Source;
 import com.tfg.siem.repository.CompanyRepository;
@@ -22,10 +23,11 @@ public class SourceService {
 
     public Source createSource(CreateSourceRequest request) {
         Company company = companyRepository.findById(request.getCompanyId())
-                .orElseThrow(() -> new RuntimeException("Company not found"));
+                .orElseThrow(
+                        () -> new ResourceNotFoundException("Company not found with id: " + request.getCompanyId()));
 
         Source source = new Source();
-        source.setName(request.getName());
+        source.setName(request.getName().trim());
         source.setType(request.getType());
         source.setCompany(company);
 

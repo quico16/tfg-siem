@@ -4,6 +4,7 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.tfg.siem.dto.CreateLogRequest;
 import com.tfg.siem.dto.LogResponse;
+import com.tfg.siem.exception.*;
 import com.tfg.siem.model.Company;
 import com.tfg.siem.model.Log;
 import com.tfg.siem.model.Source;
@@ -35,10 +36,15 @@ public class LogService {
 
     public LogResponse createLog(CreateLogRequest request) {
         Company company = companyRepository.findById(request.getCompanyId())
-                .orElseThrow(() -> new RuntimeException("Company not found"));
+                .orElseThrow(
+                        () -> new ResourceNotFoundException("Company not found with id: " + request.getCompanyId()));
 
         Source source = sourceRepository.findById(request.getSourceId())
-                .orElseThrow(() -> new RuntimeException("Source not found"));
+                .orElseThrow(() -> new ResourceNotFoundException("Source not found with id: " + request.getSourceId()));
+
+        if (!source.getCompany().getId().equals(company.getId())) {
+            throw new BadRequestException("Source does not belong to the provided company");
+        }
 
         Log log = new Log();
         log.setTimestamp(request.getTimestamp());
@@ -54,7 +60,7 @@ public class LogService {
                 log.setRawLog(rawLogJson);
             }
         } catch (Exception e) {
-            throw new RuntimeException("Invalid rawLog JSON format", e);
+            throw new BadRequestException("Invalid rawLog JSON format");
         }
 
         Log savedLog = logRepository.save(log);
