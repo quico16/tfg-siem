@@ -16,6 +16,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
+import java.time.format.DateTimeParseException;
 import java.util.List;
 
 @Service
@@ -83,9 +84,26 @@ public class LogService {
 
         List<Log> logs;
 
+        // Caso inválido: solo una fecha informada
+        if ((start != null && end == null) || (start == null && end != null)) {
+            throw new BadRequestException("Both start and end dates must be provided together");
+        }
+
         if (start != null && end != null) {
-            LocalDateTime startDate = LocalDateTime.parse(start);
-            LocalDateTime endDate = LocalDateTime.parse(end);
+            LocalDateTime startDate;
+            LocalDateTime endDate;
+
+            try {
+                startDate = LocalDateTime.parse(start);
+                endDate = LocalDateTime.parse(end);
+            } catch (DateTimeParseException e) {
+                throw new BadRequestException("Invalid date format. Use ISO format: yyyy-MM-ddTHH:mm:ss");
+            }
+
+            if (startDate.isAfter(endDate)) {
+                throw new BadRequestException("Start date must be before or equal to end date");
+            }
+
             logs = logRepository.findByCompanyIdAndTimestampBetween(companyId, startDate, endDate);
         } else {
             logs = logRepository.findByCompanyId(companyId);
