@@ -1,5 +1,6 @@
 package com.tfg.siem.controller;
 
+import com.tfg.siem.dto.CompanyResponse;
 import com.tfg.siem.dto.CreateCompanyRequest;
 import com.tfg.siem.model.Company;
 import com.tfg.siem.service.CompanyService;
@@ -19,12 +20,12 @@ public class CompanyController {
     }
 
     @PostMapping
-    public Company createCompany(@Valid @RequestBody CreateCompanyRequest request) {
+    public CompanyResponse createCompany(@Valid @RequestBody CreateCompanyRequest request) {
         return companyService.createCompany(request);
     }
 
     @GetMapping
-    public List<Company> getAllCompanies() {
+    public List<CompanyResponse> getAllCompanies() {
         return companyService.getAllCompanies();
     }
 }

@@ -25,4 +25,9 @@ public class AlertController {
     public List<AlertResponse> getOpenAlertsByCompany(@PathVariable Long companyId) {
         return alertService.getOpenAlertsByCompany(companyId);
     }
+
+    @PatchMapping("/{alertId}/close")
+    public AlertResponse closeAlert(@PathVariable Long alertId) {
+        return alertService.closeAlert(alertId);
+    }
 }

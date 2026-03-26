@@ -20,4 +20,12 @@ public class LevelCountResponse {
     public long getCount() {
         return count;
     }
+
+    public void setLevel(String level) {
+        this.level = level;
+    }
+
+    public void setCount(long count) {
+        this.count = count;
+    }
 }

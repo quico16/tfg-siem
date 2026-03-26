@@ -9,6 +9,7 @@ import com.tfg.siem.model.LogLevel;
 import com.tfg.siem.repository.AlertRepository;
 import com.tfg.siem.repository.CompanyRepository;
 import org.springframework.stereotype.Service;
+import com.tfg.siem.exception.BadRequestException;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
@@ -79,5 +80,20 @@ public class AlertService {
         response.setStatus(alert.getStatus());
         response.setCreatedAt(alert.getCreatedAt());
         return response;
+    }
+
+    @Transactional
+    public AlertResponse closeAlert(Long alertId) {
+        Alert alert = alertRepository.findById(alertId)
+                .orElseThrow(() -> new ResourceNotFoundException("Alert not found with id: " + alertId));
+
+        if (alert.getStatus() == AlertStatus.CLOSED) {
+            throw new BadRequestException("Alert is already closed");
+        }
+
+        alert.setStatus(AlertStatus.CLOSED);
+        Alert savedAlert = alertRepository.save(alert);
+
+        return mapToResponse(savedAlert);
     }
 }
