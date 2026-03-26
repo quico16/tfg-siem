@@ -1,7 +1,9 @@
 package com.tfg.siem.service;
 
+import com.tfg.siem.dto.CompanyResponse;
 import com.tfg.siem.dto.CreateCompanyRequest;
 import com.tfg.siem.model.Company;
+import com.tfg.siem.exception.*;
 import com.tfg.siem.repository.CompanyRepository;
 import org.springframework.stereotype.Service;
 
@@ -16,13 +18,27 @@ public class CompanyService {
         this.companyRepository = companyRepository;
     }
 
-    public Company createCompany(CreateCompanyRequest request) {
+    public CompanyResponse createCompany(CreateCompanyRequest request) {
+        companyRepository.findByName(request.getName().trim())
+                .ifPresent(existing -> {
+                    throw new BadRequestException("A company with this name already exists");
+                });
+
         Company company = new Company();
-        company.setName(request.getName());
-        return companyRepository.save(company);
+        company.setName(request.getName().trim());
+
+        Company savedCompany = companyRepository.save(company);
+        return mapToResponse(savedCompany);
     }
 
-    public List<Company> getAllCompanies() {
-        return companyRepository.findAll();
+    public List<CompanyResponse> getAllCompanies() {
+        return companyRepository.findAll()
+                .stream()
+                .map(this::mapToResponse)
+                .toList();
+    }
+
+    private CompanyResponse mapToResponse(Company company) {
+        return new CompanyResponse(company.getId(), company.getName(), company.getCreatedAt());
     }
 }

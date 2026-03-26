@@ -24,7 +24,10 @@ public class LogController {
     }
 
     @GetMapping("/company/{companyId}")
-    public List<LogResponse> getLogsByCompany(@PathVariable Long companyId) {
-        return logService.getLogsByCompany(companyId);
+    public List<LogResponse> getLogsByCompany(
+            @PathVariable Long companyId,
+            @RequestParam(required = false) String start,
+            @RequestParam(required = false) String end) {
+        return logService.getLogsByCompany(companyId, start, end);
     }
 }
