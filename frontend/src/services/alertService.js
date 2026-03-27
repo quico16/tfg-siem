@@ -1,15 +1,13 @@
 import api from './api'
 
 export const alertService = {
-  getAll: async (companyId, startDate, endDate, onlyOpen = true) => {
-    const res = await api.get('/alerts', {
-      params: { companyId, startDate, endDate, onlyOpen }
-    })
-    return res.data
+  async getAll(companyId) {
+    const response = await api.get(`/alerts/company/${companyId}`)
+    return response.data
   },
 
-  closeAlert: async (alertId) => {
-    const res = await api.patch(`/alerts/${alertId}/close`)
-    return res.data
+  async closeAlert(alertId) {
+    const response = await api.patch(`/alerts/${alertId}/close`)
+    return response.data
   }
 }

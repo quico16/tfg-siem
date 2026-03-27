@@ -239,3 +239,6 @@ Això evita problemes de **CORS durant el desenvolupament**.
 
 Francesc Navarro Vázquez  
 Treball de Final de Grau – Ciberseguretat
+
+
+ powershell -ExecutionPolicy Bypass -File .\seed-data-varied-dates.ps1
