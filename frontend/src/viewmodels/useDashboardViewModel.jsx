@@ -21,6 +21,7 @@ export function useDashboardViewModel() {
   const [levels, setLevels] = useState([])
   const [alerts, setAlerts] = useState([])
   const [selectedAffectedCompanyIds, setSelectedAffectedCompanyIds] = useState([])
+  const [affectedCompaniesFilterMode, setAffectedCompaniesFilterMode] = useState('ALL_ALERTS')
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
 
@@ -138,19 +139,15 @@ export function useDashboardViewModel() {
   }
 
   const availableAlertCompanies = useMemo(() => {
-    const byId = new Map()
-    alerts.forEach((alert) => {
-      const id = String(alert.companyId)
-      if (!byId.has(id)) {
-        byId.set(id, {
-          id,
-          name: alert.companyName ?? `Empresa ${id}`
-        })
-      }
-    })
+    if (!isAllCompaniesSelected) {
+      return []
+    }
 
-    return Array.from(byId.values())
-  }, [alerts])
+    return companies.map((company) => ({
+      id: String(company.id),
+      name: company.name ?? `Empresa ${company.id}`
+    }))
+  }, [companies, isAllCompaniesSelected])
 
   const filteredAlerts = useMemo(() => {
     let nextAlerts = alerts
@@ -163,18 +160,29 @@ export function useDashboardViewModel() {
       nextAlerts = nextAlerts.filter((alert) => alert.status === 'CLOSED')
     }
 
-    if (isAllCompaniesSelected && selectedAffectedCompanyIds.length > 0) {
+    if (
+      isAllCompaniesSelected &&
+      affectedCompaniesFilterMode === 'SELECT_COMPANIES' &&
+      selectedAffectedCompanyIds.length > 0
+    ) {
       nextAlerts = nextAlerts.filter((alert) =>
         selectedAffectedCompanyIds.includes(String(alert.companyId))
       )
     }
 
     return nextAlerts
-  }, [alerts, alertStatusFilter, isAllCompaniesSelected, selectedAffectedCompanyIds])
+  }, [
+    alerts,
+    alertStatusFilter,
+    isAllCompaniesSelected,
+    affectedCompaniesFilterMode,
+    selectedAffectedCompanyIds
+  ])
 
   useEffect(() => {
     if (!isAllCompaniesSelected) {
       setSelectedAffectedCompanyIds([])
+      setAffectedCompaniesFilterMode('ALL_ALERTS')
       return
     }
 
@@ -214,6 +222,8 @@ export function useDashboardViewModel() {
     setAlertStatusFilter,
     selectedAffectedCompanyIds,
     setSelectedAffectedCompanyIds,
+    affectedCompaniesFilterMode,
+    setAffectedCompaniesFilterMode,
     levelFilter,
     setLevelFilter
   }

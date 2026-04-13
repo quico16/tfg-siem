@@ -51,38 +51,46 @@ export default function DashboardView() {
         >
           <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '10px' }}>
             <strong>Filtre empreses afectades</strong>
-            <button onClick={() => vm.setSelectedAffectedCompanyIds([])}>Totes</button>
+            <select
+              value={vm.affectedCompaniesFilterMode}
+              onChange={(e) => vm.setAffectedCompaniesFilterMode(e.target.value)}
+            >
+              <option value="ALL_ALERTS">Mostrar totes les alertes</option>
+              <option value="SELECT_COMPANIES">Filtrar per empreses seleccionades</option>
+            </select>
           </div>
 
-          <div
-            style={{
-              display: 'grid',
-              gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))',
-              gap: '8px'
-            }}
-          >
-            {vm.availableAlertCompanies.map((company) => (
-              <label
-                key={company.id}
-                style={{ display: 'flex', alignItems: 'center', gap: '8px', margin: 0 }}
-              >
-                <input
-                  type="checkbox"
-                  checked={vm.selectedAffectedCompanyIds.includes(company.id)}
-                  onChange={(e) => {
-                    if (e.target.checked) {
-                      vm.setSelectedAffectedCompanyIds([...vm.selectedAffectedCompanyIds, company.id])
-                    } else {
-                      vm.setSelectedAffectedCompanyIds(
-                        vm.selectedAffectedCompanyIds.filter((id) => id !== company.id)
-                      )
-                    }
-                  }}
-                />
-                {company.name}
-              </label>
-            ))}
-          </div>
+          {vm.affectedCompaniesFilterMode === 'SELECT_COMPANIES' && (
+            <div
+              style={{
+                display: 'grid',
+                gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))',
+                gap: '8px'
+              }}
+            >
+              {vm.availableAlertCompanies.map((company) => (
+                <label
+                  key={company.id}
+                  style={{ display: 'flex', alignItems: 'center', gap: '8px', margin: 0 }}
+                >
+                  <input
+                    type="checkbox"
+                    checked={vm.selectedAffectedCompanyIds.includes(company.id)}
+                    onChange={(e) => {
+                      if (e.target.checked) {
+                        vm.setSelectedAffectedCompanyIds([...vm.selectedAffectedCompanyIds, company.id])
+                      } else {
+                        vm.setSelectedAffectedCompanyIds(
+                          vm.selectedAffectedCompanyIds.filter((id) => id !== company.id)
+                        )
+                      }
+                    }}
+                  />
+                  {company.name}
+                </label>
+              ))}
+            </div>
+          )}
         </div>
       )}
 
