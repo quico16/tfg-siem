@@ -58,6 +58,20 @@ export default function DashboardView() {
               <option value="ALL_ALERTS">Mostrar totes les alertes</option>
               <option value="SELECT_COMPANIES">Filtrar per empreses seleccionades</option>
             </select>
+
+            {vm.affectedCompaniesFilterMode === 'SELECT_COMPANIES' && (
+              <select
+                value={vm.affectedAlertsViewMode}
+                onChange={(e) => vm.setAffectedAlertsViewMode(e.target.value)}
+              >
+                <option value="ANY_SELECTED">
+                  Veure totes les alertes de les empreses seleccionades
+                </option>
+                <option value="COMMON_SELECTED">
+                  Veure només alertes comunes a totes les empreses seleccionades
+                </option>
+              </select>
+            )}
           </div>
 
           {vm.affectedCompaniesFilterMode === 'SELECT_COMPANIES' && (

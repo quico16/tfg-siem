@@ -22,6 +22,7 @@ export function useDashboardViewModel() {
   const [alerts, setAlerts] = useState([])
   const [selectedAffectedCompanyIds, setSelectedAffectedCompanyIds] = useState([])
   const [affectedCompaniesFilterMode, setAffectedCompaniesFilterMode] = useState('ALL_ALERTS')
+  const [affectedAlertsViewMode, setAffectedAlertsViewMode] = useState('ANY_SELECTED')
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
 
@@ -160,14 +161,46 @@ export function useDashboardViewModel() {
       nextAlerts = nextAlerts.filter((alert) => alert.status === 'CLOSED')
     }
 
-    if (
-      isAllCompaniesSelected &&
-      affectedCompaniesFilterMode === 'SELECT_COMPANIES' &&
-      selectedAffectedCompanyIds.length > 0
-    ) {
+    if (isAllCompaniesSelected && affectedCompaniesFilterMode === 'SELECT_COMPANIES') {
+      if (selectedAffectedCompanyIds.length === 0) {
+        return []
+      }
+
+      // Primer filtre: només alertes de les empreses seleccionades.
       nextAlerts = nextAlerts.filter((alert) =>
         selectedAffectedCompanyIds.includes(String(alert.companyId))
       )
+
+      if (affectedAlertsViewMode === 'COMMON_SELECTED') {
+        // Clau de correlació lleugera (severitat + missatge normalitzat).
+        const normalizeMessage = (message) =>
+          String(message || '')
+            .toLowerCase()
+            .replace(/^critical log detected from source\s+[^:]+:\s*/i, '')
+            .replace(/\s+/g, ' ')
+            .trim()
+
+        const buildKey = (alert) => `${alert.severity}|${normalizeMessage(alert.message)}`
+
+        const keyToCompanies = new Map()
+        nextAlerts.forEach((alert) => {
+          const key = buildKey(alert)
+          const companyId = String(alert.companyId)
+          const companiesForKey = keyToCompanies.get(key) || new Set()
+          companiesForKey.add(companyId)
+          keyToCompanies.set(key, companiesForKey)
+        })
+
+        const commonKeys = new Set()
+        keyToCompanies.forEach((companySet, key) => {
+          const affectsAllSelected = selectedAffectedCompanyIds.every((id) => companySet.has(id))
+          if (affectsAllSelected) {
+            commonKeys.add(key)
+          }
+        })
+
+        nextAlerts = nextAlerts.filter((alert) => commonKeys.has(buildKey(alert)))
+      }
     }
 
     return nextAlerts
@@ -176,6 +209,7 @@ export function useDashboardViewModel() {
     alertStatusFilter,
     isAllCompaniesSelected,
     affectedCompaniesFilterMode,
+    affectedAlertsViewMode,
     selectedAffectedCompanyIds
   ])
 
@@ -183,6 +217,7 @@ export function useDashboardViewModel() {
     if (!isAllCompaniesSelected) {
       setSelectedAffectedCompanyIds([])
       setAffectedCompaniesFilterMode('ALL_ALERTS')
+      setAffectedAlertsViewMode('ANY_SELECTED')
       return
     }
 
@@ -224,6 +259,8 @@ export function useDashboardViewModel() {
     setSelectedAffectedCompanyIds,
     affectedCompaniesFilterMode,
     setAffectedCompaniesFilterMode,
+    affectedAlertsViewMode,
+    setAffectedAlertsViewMode,
     levelFilter,
     setLevelFilter
   }
