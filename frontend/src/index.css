@@ -34,6 +34,11 @@ table {
   background: white;
 }
 
+.dashboard-alerts-scroll-container {
+  max-height: 420px;
+  overflow-y: auto;
+}
+
 th, td {
   border: 1px solid #ddd;
   padding: 10px;
