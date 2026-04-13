@@ -11,7 +11,8 @@ export default function AlertsTable({ alerts, onCloseAlert }) {
         <tr>
           <th>ID</th>
           <th>Empresa</th>
-          <th>Grup</th>
+          <th>Tipus</th>
+          <th>Empreses afectades</th>
           <th>Fecha</th>
           <th>Nivell</th>
           <th>Missatge</th>
@@ -24,10 +25,8 @@ export default function AlertsTable({ alerts, onCloseAlert }) {
           <tr key={alert.id}>
             <td>{alert.id}</td>
             <td>{alert.companyName ?? '-'}</td>
-            <td>
-              {alert.correlationGroupId ?? '-'}{' '}
-              {alert.companiesAffectedCount > 1 ? `(${alert.companiesAffectedCount} empreses)` : ''}
-            </td>
+            <td>{alert.sharedTypeLabel ?? '-'}</td>
+            <td>{(alert.affectedCompanyNames || []).join(', ') || '-'}</td>
             <td>{formatDateToSeconds(alert.createdAt)}</td>
             <td>{alert.severity}</td>
             <td>{alert.message}</td>

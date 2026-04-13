@@ -204,27 +204,37 @@ export function useDashboardViewModel() {
       }
     }
 
+    const scopeCompanyIds =
+      isAllCompaniesSelected &&
+      affectedCompaniesFilterMode === 'SELECT_COMPANIES' &&
+      selectedAffectedCompanyIds.length > 0
+        ? selectedAffectedCompanyIds
+        : selectedCompanyIds
+
+    const scopeCompanyCount = Math.max(scopeCompanyIds.length, 1)
+
     const keyToCompanies = new Map()
     nextAlerts.forEach((alert) => {
       const key = buildCorrelationKey(alert)
-      const companiesForKey = keyToCompanies.get(key) || new Set()
-      companiesForKey.add(String(alert.companyId))
+      const companiesForKey = keyToCompanies.get(key) || new Map()
+      companiesForKey.set(String(alert.companyId), alert.companyName ?? `Empresa ${alert.companyId}`)
       keyToCompanies.set(key, companiesForKey)
     })
 
-    const orderedKeys = Array.from(keyToCompanies.keys()).sort()
-    const keyToGroupId = new Map(
-      orderedKeys.map((key, index) => [key, `GRP-${String(index + 1).padStart(3, '0')}`])
-    )
-
     return nextAlerts.map((alert) => {
       const correlationKey = buildCorrelationKey(alert)
-      const companiesAffectedCount = keyToCompanies.get(correlationKey)?.size ?? 1
+      const affectedCompaniesMap = keyToCompanies.get(correlationKey) || new Map()
+      const companiesAffectedCount = affectedCompaniesMap.size || 1
+      const affectedCompanyNames = Array.from(affectedCompaniesMap.values())
+      const sharedTypeLabel =
+        companiesAffectedCount > 1
+          ? `Compartida (${companiesAffectedCount}/${scopeCompanyCount})`
+          : `Unica (${companiesAffectedCount}/${scopeCompanyCount})`
 
       return {
         ...alert,
-        correlationGroupId: keyToGroupId.get(correlationKey),
-        companiesAffectedCount
+        sharedTypeLabel,
+        affectedCompanyNames
       }
     })
   }, [
@@ -233,7 +243,8 @@ export function useDashboardViewModel() {
     isAllCompaniesSelected,
     affectedCompaniesFilterMode,
     affectedAlertsViewMode,
-    selectedAffectedCompanyIds
+    selectedAffectedCompanyIds,
+    selectedCompanyIds
   ])
 
   useEffect(() => {
