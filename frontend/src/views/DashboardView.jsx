@@ -141,7 +141,9 @@ export default function DashboardView() {
         {vm.alertStatusFilter === 'CLOSED' && 'Alertes tancades'}
       </h2>
 
-      <AlertsTable alerts={vm.filteredAlerts || []} onCloseAlert={vm.closeAlert} />
+      <div className="dashboard-alerts-scroll-container">
+        <AlertsTable alerts={vm.filteredAlerts || []} onCloseAlert={vm.closeAlert} />
+      </div>
     </div>
   )
 }
