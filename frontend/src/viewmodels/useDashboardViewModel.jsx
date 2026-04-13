@@ -14,6 +14,18 @@ function getDefaultDateRange() {
   }
 }
 
+function normalizeAlertMessage(message) {
+  return String(message || '')
+    .toLowerCase()
+    .replace(/^critical log detected from source\s+[^:]+:\s*/i, '')
+    .replace(/\s+/g, ' ')
+    .trim()
+}
+
+function buildCorrelationKey(alert) {
+  return `${alert.severity}|${normalizeAlertMessage(alert.message)}`
+}
+
 export function useDashboardViewModel() {
   const [companies, setCompanies] = useState([])
   const [selectedCompanyId, setSelectedCompanyId] = useState('')
@@ -166,25 +178,14 @@ export function useDashboardViewModel() {
         return []
       }
 
-      // Primer filtre: només alertes de les empreses seleccionades.
       nextAlerts = nextAlerts.filter((alert) =>
         selectedAffectedCompanyIds.includes(String(alert.companyId))
       )
 
       if (affectedAlertsViewMode === 'COMMON_SELECTED') {
-        // Clau de correlació lleugera (severitat + missatge normalitzat).
-        const normalizeMessage = (message) =>
-          String(message || '')
-            .toLowerCase()
-            .replace(/^critical log detected from source\s+[^:]+:\s*/i, '')
-            .replace(/\s+/g, ' ')
-            .trim()
-
-        const buildKey = (alert) => `${alert.severity}|${normalizeMessage(alert.message)}`
-
         const keyToCompanies = new Map()
         nextAlerts.forEach((alert) => {
-          const key = buildKey(alert)
+          const key = buildCorrelationKey(alert)
           const companyId = String(alert.companyId)
           const companiesForKey = keyToCompanies.get(key) || new Set()
           companiesForKey.add(companyId)
@@ -199,11 +200,33 @@ export function useDashboardViewModel() {
           }
         })
 
-        nextAlerts = nextAlerts.filter((alert) => commonKeys.has(buildKey(alert)))
+        nextAlerts = nextAlerts.filter((alert) => commonKeys.has(buildCorrelationKey(alert)))
       }
     }
 
-    return nextAlerts
+    const keyToCompanies = new Map()
+    nextAlerts.forEach((alert) => {
+      const key = buildCorrelationKey(alert)
+      const companiesForKey = keyToCompanies.get(key) || new Set()
+      companiesForKey.add(String(alert.companyId))
+      keyToCompanies.set(key, companiesForKey)
+    })
+
+    const orderedKeys = Array.from(keyToCompanies.keys()).sort()
+    const keyToGroupId = new Map(
+      orderedKeys.map((key, index) => [key, `GRP-${String(index + 1).padStart(3, '0')}`])
+    )
+
+    return nextAlerts.map((alert) => {
+      const correlationKey = buildCorrelationKey(alert)
+      const companiesAffectedCount = keyToCompanies.get(correlationKey)?.size ?? 1
+
+      return {
+        ...alert,
+        correlationGroupId: keyToGroupId.get(correlationKey),
+        companiesAffectedCount
+      }
+    })
   }, [
     alerts,
     alertStatusFilter,
