@@ -20,14 +20,12 @@ export function useDashboardViewModel() {
   const [summary, setSummary] = useState(null)
   const [levels, setLevels] = useState([])
   const [alerts, setAlerts] = useState([])
-  const [commonAlerts, setCommonAlerts] = useState([])
+  const [selectedAffectedCompanyIds, setSelectedAffectedCompanyIds] = useState([])
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
 
   const [alertStatusFilter, setAlertStatusFilter] = useState('ALL')
   const [levelFilter, setLevelFilter] = useState('ALL')
-  const [commonAlertsMode, setCommonAlertsMode] = useState('ALL_SELECTED')
-  const [minAffectedCompanies, setMinAffectedCompanies] = useState(2)
 
   const defaults = getDefaultDateRange()
   const [startDate, setStartDate] = useState(defaults.startDate)
@@ -53,7 +51,7 @@ export function useDashboardViewModel() {
       setCompanies(data)
 
       if (data.length > 0 && !selectedCompanyId) {
-        setSelectedCompanyId(String(data[0].id))
+        setSelectedCompanyId('ALL')
       }
     } catch (err) {
       setError('Error carregant empreses')
@@ -61,27 +59,11 @@ export function useDashboardViewModel() {
     }
   }, [selectedCompanyId])
 
-  const effectiveMinAffectedCompanies = useMemo(() => {
-    if (selectedCompanyIds.length === 0) {
-      return 1
-    }
-
-    if (commonAlertsMode === 'ALL_SELECTED') {
-      return selectedCompanyIds.length
-    }
-
-    const parsed = Number(minAffectedCompanies)
-    const safeParsed = Number.isFinite(parsed) ? parsed : 2
-    const boundedMin = Math.max(1, Math.floor(safeParsed))
-    return Math.min(boundedMin, selectedCompanyIds.length)
-  }, [selectedCompanyIds.length, commonAlertsMode, minAffectedCompanies])
-
   const loadDashboardData = useCallback(async () => {
     if (selectedCompanyIds.length === 0) {
       setSummary(null)
       setLevels([])
       setAlerts([])
-      setCommonAlerts([])
       return
     }
 
@@ -137,23 +119,13 @@ export function useDashboardViewModel() {
       setSummary(mergedSummary)
       setLevels(mergedLevels)
       setAlerts(mergedAlerts)
-
-      if (isAllCompaniesSelected && selectedCompanyIds.length > 1) {
-        const commonAlertsData = await alertService.getCrossCompany(
-          selectedCompanyIds,
-          effectiveMinAffectedCompanies
-        )
-        setCommonAlerts(commonAlertsData ?? [])
-      } else {
-        setCommonAlerts([])
-      }
     } catch (err) {
       setError('Error carregant dades del dashboard')
       console.error(err)
     } finally {
       setLoading(false)
     }
-  }, [selectedCompanyIds, effectiveMinAffectedCompanies, isAllCompaniesSelected])
+  }, [selectedCompanyIds])
 
   const closeAlert = async (alertId) => {
     try {
@@ -165,17 +137,51 @@ export function useDashboardViewModel() {
     }
   }
 
+  const availableAlertCompanies = useMemo(() => {
+    const byId = new Map()
+    alerts.forEach((alert) => {
+      const id = String(alert.companyId)
+      if (!byId.has(id)) {
+        byId.set(id, {
+          id,
+          name: alert.companyName ?? `Empresa ${id}`
+        })
+      }
+    })
+
+    return Array.from(byId.values())
+  }, [alerts])
+
   const filteredAlerts = useMemo(() => {
+    let nextAlerts = alerts
+
     if (alertStatusFilter === 'OPEN') {
-      return alerts.filter((alert) => alert.status === 'OPEN')
+      nextAlerts = nextAlerts.filter((alert) => alert.status === 'OPEN')
     }
 
     if (alertStatusFilter === 'CLOSED') {
-      return alerts.filter((alert) => alert.status === 'CLOSED')
+      nextAlerts = nextAlerts.filter((alert) => alert.status === 'CLOSED')
     }
 
-    return alerts
-  }, [alerts, alertStatusFilter])
+    if (isAllCompaniesSelected && selectedAffectedCompanyIds.length > 0) {
+      nextAlerts = nextAlerts.filter((alert) =>
+        selectedAffectedCompanyIds.includes(String(alert.companyId))
+      )
+    }
+
+    return nextAlerts
+  }, [alerts, alertStatusFilter, isAllCompaniesSelected, selectedAffectedCompanyIds])
+
+  useEffect(() => {
+    if (!isAllCompaniesSelected) {
+      setSelectedAffectedCompanyIds([])
+      return
+    }
+
+    setSelectedAffectedCompanyIds((current) =>
+      current.filter((id) => availableAlertCompanies.some((company) => company.id === id))
+    )
+  }, [isAllCompaniesSelected, availableAlertCompanies])
 
   useEffect(() => {
     loadCompanies()
@@ -198,7 +204,7 @@ export function useDashboardViewModel() {
     summary,
     levels,
     alerts,
-    commonAlerts,
+    availableAlertCompanies,
     filteredAlerts,
     loading,
     error,
@@ -206,12 +212,9 @@ export function useDashboardViewModel() {
     closeAlert,
     alertStatusFilter,
     setAlertStatusFilter,
+    selectedAffectedCompanyIds,
+    setSelectedAffectedCompanyIds,
     levelFilter,
-    setLevelFilter,
-    commonAlertsMode,
-    setCommonAlertsMode,
-    minAffectedCompanies,
-    setMinAffectedCompanies,
-    effectiveMinAffectedCompanies
+    setLevelFilter
   }
 }

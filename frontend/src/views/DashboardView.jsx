@@ -3,7 +3,6 @@ import CompanySelector from '../components/CompanySelector'
 import DateRangeFilter from '../components/DateRangeFilter'
 import StatCard from '../components/StatCard'
 import AlertsTable from '../components/AlertsTable'
-import CommonAlertsTable from '../components/CommonAlertsTable'
 import ErrorMessage from '../components/ErrorMessage'
 import LoadingSpinner from '../components/LoadingSpinner'
 import LevelsChart from '../components/LevelsChart'
@@ -42,28 +41,48 @@ export default function DashboardView() {
       </div>
 
       {vm.isAllCompaniesSelected && (
-        <div style={{ display: 'flex', gap: '12px', marginBottom: '20px', flexWrap: 'wrap' }}>
-          <select
-            value={vm.commonAlertsMode}
-            onChange={(e) => vm.setCommonAlertsMode(e.target.value)}
-          >
-            <option value="ALL_SELECTED">Alertes comunes a totes les empreses</option>
-            <option value="AT_LEAST_X">Alertes comunes en almenys X empreses</option>
-          </select>
+        <div
+          style={{
+            marginBottom: '20px',
+            padding: '12px',
+            border: '1px solid #d5d5d5',
+            borderRadius: '8px'
+          }}
+        >
+          <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '10px' }}>
+            <strong>Filtre empreses afectades</strong>
+            <button onClick={() => vm.setSelectedAffectedCompanyIds([])}>Totes</button>
+          </div>
 
-          {vm.commonAlertsMode === 'AT_LEAST_X' && (
-            <label style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-              X:
-              <input
-                type="number"
-                min="1"
-                max={Math.max(vm.selectedCompanyIds?.length || 1, 1)}
-                value={vm.minAffectedCompanies}
-                onChange={(e) => vm.setMinAffectedCompanies(e.target.value)}
-                style={{ width: '80px' }}
-              />
-            </label>
-          )}
+          <div
+            style={{
+              display: 'grid',
+              gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))',
+              gap: '8px'
+            }}
+          >
+            {vm.availableAlertCompanies.map((company) => (
+              <label
+                key={company.id}
+                style={{ display: 'flex', alignItems: 'center', gap: '8px', margin: 0 }}
+              >
+                <input
+                  type="checkbox"
+                  checked={vm.selectedAffectedCompanyIds.includes(company.id)}
+                  onChange={(e) => {
+                    if (e.target.checked) {
+                      vm.setSelectedAffectedCompanyIds([...vm.selectedAffectedCompanyIds, company.id])
+                    } else {
+                      vm.setSelectedAffectedCompanyIds(
+                        vm.selectedAffectedCompanyIds.filter((id) => id !== company.id)
+                      )
+                    }
+                  }}
+                />
+                {company.name}
+              </label>
+            ))}
+          </div>
         </div>
       )}
 
@@ -101,15 +120,6 @@ export default function DashboardView() {
       </h2>
 
       <AlertsTable alerts={vm.filteredAlerts || []} onCloseAlert={vm.closeAlert} />
-
-      {vm.isAllCompaniesSelected && (
-        <>
-          <h2 style={{ marginTop: '28px' }}>
-            Alertes comunes (almenys {vm.effectiveMinAffectedCompanies} empreses)
-          </h2>
-          <CommonAlertsTable commonAlerts={vm.commonAlerts || []} />
-        </>
-      )}
     </div>
   )
 }
