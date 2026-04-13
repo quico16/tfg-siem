@@ -18,8 +18,8 @@ export default function DashboardView() {
       <div style={{ display: 'flex', gap: '12px', marginBottom: '20px', flexWrap: 'wrap' }}>
         <CompanySelector
           companies={vm.companies || []}
-          selectedCompanyIds={vm.selectedCompanyIds || []}
-          onChange={vm.setSelectedCompanyIds}
+          selectedCompanyId={vm.selectedCompanyId || ''}
+          onChange={vm.setSelectedCompanyId}
         />
 
         <DateRangeFilter
@@ -41,29 +41,31 @@ export default function DashboardView() {
         <button onClick={vm.reload}>Refrescar</button>
       </div>
 
-      <div style={{ display: 'flex', gap: '12px', marginBottom: '20px', flexWrap: 'wrap' }}>
-        <select
-          value={vm.commonAlertsMode}
-          onChange={(e) => vm.setCommonAlertsMode(e.target.value)}
-        >
-          <option value="ALL_SELECTED">Alertes comunes a totes les empreses seleccionades</option>
-          <option value="AT_LEAST_X">Alertes comunes en almenys X empreses</option>
-        </select>
+      {vm.isAllCompaniesSelected && (
+        <div style={{ display: 'flex', gap: '12px', marginBottom: '20px', flexWrap: 'wrap' }}>
+          <select
+            value={vm.commonAlertsMode}
+            onChange={(e) => vm.setCommonAlertsMode(e.target.value)}
+          >
+            <option value="ALL_SELECTED">Alertes comunes a totes les empreses</option>
+            <option value="AT_LEAST_X">Alertes comunes en almenys X empreses</option>
+          </select>
 
-        {vm.commonAlertsMode === 'AT_LEAST_X' && (
-          <label style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-            X:
-            <input
-              type="number"
-              min="1"
-              max={Math.max(vm.selectedCompanyIds?.length || 1, 1)}
-              value={vm.minAffectedCompanies}
-              onChange={(e) => vm.setMinAffectedCompanies(e.target.value)}
-              style={{ width: '80px' }}
-            />
-          </label>
-        )}
-      </div>
+          {vm.commonAlertsMode === 'AT_LEAST_X' && (
+            <label style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+              X:
+              <input
+                type="number"
+                min="1"
+                max={Math.max(vm.selectedCompanyIds?.length || 1, 1)}
+                value={vm.minAffectedCompanies}
+                onChange={(e) => vm.setMinAffectedCompanies(e.target.value)}
+                style={{ width: '80px' }}
+              />
+            </label>
+          )}
+        </div>
+      )}
 
       {vm.loading && <LoadingSpinner />}
       {vm.error && <ErrorMessage message={vm.error} />}
@@ -100,11 +102,14 @@ export default function DashboardView() {
 
       <AlertsTable alerts={vm.filteredAlerts || []} onCloseAlert={vm.closeAlert} />
 
-      <h2 style={{ marginTop: '28px' }}>
-        Alertes comunes (almenys {vm.effectiveMinAffectedCompanies} empreses)
-      </h2>
-
-      <CommonAlertsTable commonAlerts={vm.commonAlerts || []} />
+      {vm.isAllCompaniesSelected && (
+        <>
+          <h2 style={{ marginTop: '28px' }}>
+            Alertes comunes (almenys {vm.effectiveMinAffectedCompanies} empreses)
+          </h2>
+          <CommonAlertsTable commonAlerts={vm.commonAlerts || []} />
+        </>
+      )}
     </div>
   )
 }

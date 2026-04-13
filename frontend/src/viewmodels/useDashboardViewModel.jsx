@@ -16,7 +16,7 @@ function getDefaultDateRange() {
 
 export function useDashboardViewModel() {
   const [companies, setCompanies] = useState([])
-  const [selectedCompanyIds, setSelectedCompanyIds] = useState([])
+  const [selectedCompanyId, setSelectedCompanyId] = useState('')
   const [summary, setSummary] = useState(null)
   const [levels, setLevels] = useState([])
   const [alerts, setAlerts] = useState([])
@@ -33,19 +33,33 @@ export function useDashboardViewModel() {
   const [startDate, setStartDate] = useState(defaults.startDate)
   const [endDate, setEndDate] = useState(defaults.endDate)
 
+  const isAllCompaniesSelected = selectedCompanyId === 'ALL'
+
+  const selectedCompanyIds = useMemo(() => {
+    if (isAllCompaniesSelected) {
+      return companies.map((company) => String(company.id))
+    }
+
+    if (!selectedCompanyId) {
+      return []
+    }
+
+    return [selectedCompanyId]
+  }, [companies, isAllCompaniesSelected, selectedCompanyId])
+
   const loadCompanies = useCallback(async () => {
     try {
       const data = await companyService.getAll()
       setCompanies(data)
 
-      if (data.length > 0 && selectedCompanyIds.length === 0) {
-        setSelectedCompanyIds([String(data[0].id)])
+      if (data.length > 0 && !selectedCompanyId) {
+        setSelectedCompanyId(String(data[0].id))
       }
     } catch (err) {
       setError('Error carregant empreses')
       console.error(err)
     }
-  }, [selectedCompanyIds.length])
+  }, [selectedCompanyId])
 
   const effectiveMinAffectedCompanies = useMemo(() => {
     if (selectedCompanyIds.length === 0) {
@@ -75,24 +89,21 @@ export function useDashboardViewModel() {
     setError('')
 
     try {
-      const [resultsByCompany, commonAlertsData] = await Promise.all([
-        Promise.all(
-          selectedCompanyIds.map(async (companyId) => {
-            const [summaryData, levelsData, alertsData] = await Promise.all([
-              dashboardService.getSummary(companyId),
-              dashboardService.getLevels(companyId),
-              alertService.getAll(companyId)
-            ])
+      const resultsByCompany = await Promise.all(
+        selectedCompanyIds.map(async (companyId) => {
+          const [summaryData, levelsData, alertsData] = await Promise.all([
+            dashboardService.getSummary(companyId),
+            dashboardService.getLevels(companyId),
+            alertService.getAll(companyId)
+          ])
 
-            return {
-              summaryData,
-              levelsData,
-              alertsData
-            }
-          })
-        ),
-        alertService.getCrossCompany(selectedCompanyIds, effectiveMinAffectedCompanies)
-      ])
+          return {
+            summaryData,
+            levelsData,
+            alertsData
+          }
+        })
+      )
 
       const mergedSummary = resultsByCompany.reduce(
         (acc, current) => ({
@@ -126,14 +137,23 @@ export function useDashboardViewModel() {
       setSummary(mergedSummary)
       setLevels(mergedLevels)
       setAlerts(mergedAlerts)
-      setCommonAlerts(commonAlertsData ?? [])
+
+      if (isAllCompaniesSelected && selectedCompanyIds.length > 1) {
+        const commonAlertsData = await alertService.getCrossCompany(
+          selectedCompanyIds,
+          effectiveMinAffectedCompanies
+        )
+        setCommonAlerts(commonAlertsData ?? [])
+      } else {
+        setCommonAlerts([])
+      }
     } catch (err) {
       setError('Error carregant dades del dashboard')
       console.error(err)
     } finally {
       setLoading(false)
     }
-  }, [selectedCompanyIds, effectiveMinAffectedCompanies])
+  }, [selectedCompanyIds, effectiveMinAffectedCompanies, isAllCompaniesSelected])
 
   const closeAlert = async (alertId) => {
     try {
@@ -167,8 +187,10 @@ export function useDashboardViewModel() {
 
   return {
     companies,
+    selectedCompanyId,
+    setSelectedCompanyId,
     selectedCompanyIds,
-    setSelectedCompanyIds,
+    isAllCompaniesSelected,
     startDate,
     endDate,
     setStartDate,
