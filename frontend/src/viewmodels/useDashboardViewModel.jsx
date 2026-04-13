@@ -20,11 +20,14 @@ export function useDashboardViewModel() {
   const [summary, setSummary] = useState(null)
   const [levels, setLevels] = useState([])
   const [alerts, setAlerts] = useState([])
+  const [commonAlerts, setCommonAlerts] = useState([])
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
 
   const [alertStatusFilter, setAlertStatusFilter] = useState('ALL')
   const [levelFilter, setLevelFilter] = useState('ALL')
+  const [commonAlertsMode, setCommonAlertsMode] = useState('ALL_SELECTED')
+  const [minAffectedCompanies, setMinAffectedCompanies] = useState(2)
 
   const defaults = getDefaultDateRange()
   const [startDate, setStartDate] = useState(defaults.startDate)
@@ -44,11 +47,27 @@ export function useDashboardViewModel() {
     }
   }, [selectedCompanyIds.length])
 
+  const effectiveMinAffectedCompanies = useMemo(() => {
+    if (selectedCompanyIds.length === 0) {
+      return 1
+    }
+
+    if (commonAlertsMode === 'ALL_SELECTED') {
+      return selectedCompanyIds.length
+    }
+
+    const parsed = Number(minAffectedCompanies)
+    const safeParsed = Number.isFinite(parsed) ? parsed : 2
+    const boundedMin = Math.max(1, Math.floor(safeParsed))
+    return Math.min(boundedMin, selectedCompanyIds.length)
+  }, [selectedCompanyIds.length, commonAlertsMode, minAffectedCompanies])
+
   const loadDashboardData = useCallback(async () => {
     if (selectedCompanyIds.length === 0) {
       setSummary(null)
       setLevels([])
       setAlerts([])
+      setCommonAlerts([])
       return
     }
 
@@ -56,21 +75,24 @@ export function useDashboardViewModel() {
     setError('')
 
     try {
-      const resultsByCompany = await Promise.all(
-        selectedCompanyIds.map(async (companyId) => {
-          const [summaryData, levelsData, alertsData] = await Promise.all([
-            dashboardService.getSummary(companyId),
-            dashboardService.getLevels(companyId),
-            alertService.getAll(companyId)
-          ])
+      const [resultsByCompany, commonAlertsData] = await Promise.all([
+        Promise.all(
+          selectedCompanyIds.map(async (companyId) => {
+            const [summaryData, levelsData, alertsData] = await Promise.all([
+              dashboardService.getSummary(companyId),
+              dashboardService.getLevels(companyId),
+              alertService.getAll(companyId)
+            ])
 
-          return {
-            summaryData,
-            levelsData,
-            alertsData
-          }
-        })
-      )
+            return {
+              summaryData,
+              levelsData,
+              alertsData
+            }
+          })
+        ),
+        alertService.getCrossCompany(selectedCompanyIds, effectiveMinAffectedCompanies)
+      ])
 
       const mergedSummary = resultsByCompany.reduce(
         (acc, current) => ({
@@ -104,13 +126,14 @@ export function useDashboardViewModel() {
       setSummary(mergedSummary)
       setLevels(mergedLevels)
       setAlerts(mergedAlerts)
+      setCommonAlerts(commonAlertsData ?? [])
     } catch (err) {
       setError('Error carregant dades del dashboard')
       console.error(err)
     } finally {
       setLoading(false)
     }
-  }, [selectedCompanyIds])
+  }, [selectedCompanyIds, effectiveMinAffectedCompanies])
 
   const closeAlert = async (alertId) => {
     try {
@@ -153,6 +176,7 @@ export function useDashboardViewModel() {
     summary,
     levels,
     alerts,
+    commonAlerts,
     filteredAlerts,
     loading,
     error,
@@ -161,6 +185,11 @@ export function useDashboardViewModel() {
     alertStatusFilter,
     setAlertStatusFilter,
     levelFilter,
-    setLevelFilter
+    setLevelFilter,
+    commonAlertsMode,
+    setCommonAlertsMode,
+    minAffectedCompanies,
+    setMinAffectedCompanies,
+    effectiveMinAffectedCompanies
   }
 }
