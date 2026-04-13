@@ -46,4 +46,6 @@ jobs:
           cache: maven
 
       - name: Run lint
-        run: ./mvnw -q -DskipTests checkstyle:check
+        run: |
+          chmod +x mvnw
+          ./mvnw -q -DskipTests checkstyle:check
