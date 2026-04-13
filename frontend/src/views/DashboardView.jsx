@@ -17,8 +17,8 @@ export default function DashboardView() {
       <div style={{ display: 'flex', gap: '12px', marginBottom: '20px', flexWrap: 'wrap' }}>
         <CompanySelector
           companies={vm.companies || []}
-          value={vm.selectedCompanyId || ''}
-          onChange={vm.setSelectedCompanyId}
+          selectedCompanyIds={vm.selectedCompanyIds || []}
+          onChange={vm.setSelectedCompanyIds}
         />
 
         <DateRangeFilter

@@ -4,6 +4,7 @@ export default function AlertsTable({ alerts, onCloseAlert }) {
       <thead>
         <tr>
           <th>ID</th>
+          <th>Empresa</th>
           <th>Fecha</th>
           <th>Nivell</th>
           <th>Missatge</th>
@@ -15,6 +16,7 @@ export default function AlertsTable({ alerts, onCloseAlert }) {
         {alerts.map((alert) => (
           <tr key={alert.id}>
             <td>{alert.id}</td>
+            <td>{alert.companyName ?? '-'}</td>
             <td>{alert.createdAt}</td>
             <td>{alert.severity}</td>
             <td>{alert.message}</td>
