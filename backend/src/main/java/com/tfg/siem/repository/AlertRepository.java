@@ -13,6 +13,9 @@ public interface AlertRepository extends JpaRepository<Alert, Long> {
     @Query("SELECT a FROM Alert a JOIN FETCH a.company LEFT JOIN FETCH a.log WHERE a.company.id = :companyId ORDER BY a.createdAt DESC")
     List<Alert> findByCompanyId(@Param("companyId") Long companyId);
 
+    @Query("SELECT a FROM Alert a JOIN FETCH a.company LEFT JOIN FETCH a.log WHERE a.company.id IN :companyIds ORDER BY a.createdAt DESC")
+    List<Alert> findByCompanyIdIn(@Param("companyIds") List<Long> companyIds);
+
     @Query("SELECT a FROM Alert a JOIN FETCH a.company LEFT JOIN FETCH a.log WHERE a.company.id = :companyId AND a.status = :status ORDER BY a.createdAt DESC")
     List<Alert> findByCompanyIdAndStatus(@Param("companyId") Long companyId, @Param("status") AlertStatus status);
 

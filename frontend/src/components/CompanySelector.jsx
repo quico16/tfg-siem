@@ -1,10 +1,11 @@
-export default function CompanySelector({ companies, value, onChange }) {
+export default function CompanySelector({ companies, selectedCompanyId, onChange }) {
+  const safeCompanies = Array.isArray(companies) ? companies : []
   return (
-    <select value={value || ''} onChange={(e) => onChange(e.target.value)}>
-      <option value="">Selecciona empresa</option>
-      {companies.map((c) => (
-        <option key={c.id} value={c.id}>
-          {c.name}
+    <select value={selectedCompanyId || 'ALL'} onChange={(e) => onChange(e.target.value)}>
+      <option value="ALL">Totes les empreses</option>
+      {safeCompanies.map((company) => (
+        <option key={company.id} value={String(company.id)}>
+          {company.name}
         </option>
       ))}
     </select>
