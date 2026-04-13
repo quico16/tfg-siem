@@ -32,6 +32,7 @@ export function useDashboardViewModel() {
   const [summary, setSummary] = useState(null)
   const [levels, setLevels] = useState([])
   const [alerts, setAlerts] = useState([])
+  const [alertsForCorrelation, setAlertsForCorrelation] = useState([])
   const [selectedAffectedCompanyIds, setSelectedAffectedCompanyIds] = useState([])
   const [affectedCompaniesFilterMode, setAffectedCompaniesFilterMode] = useState('ALL_ALERTS')
   const [affectedAlertsViewMode, setAffectedAlertsViewMode] = useState('ANY_SELECTED')
@@ -78,6 +79,7 @@ export function useDashboardViewModel() {
       setSummary(null)
       setLevels([])
       setAlerts([])
+      setAlertsForCorrelation([])
       return
     }
 
@@ -130,16 +132,32 @@ export function useDashboardViewModel() {
         .flatMap(({ alertsData }) => alertsData ?? [])
         .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
 
+      const allCompanyIds = companies.map((company) => String(company.id))
+      let correlationAlerts = mergedAlerts
+
+      if (!isAllCompaniesSelected && allCompanyIds.length > selectedCompanyIds.length) {
+        const nonSelectedCompanyIds = allCompanyIds.filter(
+          (companyId) => !selectedCompanyIds.includes(companyId)
+        )
+
+        const otherCompanyAlerts = await Promise.all(
+          nonSelectedCompanyIds.map(async (companyId) => alertService.getAll(companyId))
+        )
+
+        correlationAlerts = [...mergedAlerts, ...otherCompanyAlerts.flatMap((items) => items ?? [])]
+      }
+
       setSummary(mergedSummary)
       setLevels(mergedLevels)
       setAlerts(mergedAlerts)
+      setAlertsForCorrelation(correlationAlerts)
     } catch (err) {
       setError('Error carregant dades del dashboard')
       console.error(err)
     } finally {
       setLoading(false)
     }
-  }, [selectedCompanyIds])
+  }, [selectedCompanyIds, companies, isAllCompaniesSelected])
 
   const closeAlert = async (alertId) => {
     try {
@@ -213,8 +231,11 @@ export function useDashboardViewModel() {
 
     const scopeCompanyCount = Math.max(scopeCompanyIds.length, 1)
 
+    const correlationSourceAlerts =
+      alertsForCorrelation.length > 0 ? alertsForCorrelation : nextAlerts
+
     const keyToCompanies = new Map()
-    nextAlerts.forEach((alert) => {
+    correlationSourceAlerts.forEach((alert) => {
       const key = buildCorrelationKey(alert)
       const companiesForKey = keyToCompanies.get(key) || new Map()
       companiesForKey.set(String(alert.companyId), alert.companyName ?? `Empresa ${alert.companyId}`)
@@ -239,6 +260,7 @@ export function useDashboardViewModel() {
     })
   }, [
     alerts,
+    alertsForCorrelation,
     alertStatusFilter,
     isAllCompaniesSelected,
     affectedCompaniesFilterMode,
