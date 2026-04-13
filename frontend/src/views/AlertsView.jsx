@@ -1,8 +1,3 @@
-import { useAlertsViewModel } from '../viewmodels/useAlertsViewModel'
-import AlertsTable from '../components/AlertsTable'
-import LoadingSpinner from '../components/LoadingSpinner'
-import ErrorMessage from '../components/ErrorMessage'
-
 export default function AlertsView() {
   return (
     <div style={{ padding: '24px' }}>
