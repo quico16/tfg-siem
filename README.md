@@ -242,3 +242,22 @@ Treball de Final de Grau – Ciberseguretat
 
 
  powershell -ExecutionPolicy Bypass -File .\seed-data-varied-dates.ps1
+
+---
+
+# Lint en commits i PR
+
+Per activar el lint automatic a cada commit en local:
+
+```powershell
+powershell -ExecutionPolicy Bypass -File .\setup-git-hooks.ps1
+```
+
+El hook executa:
+
+```bash
+npm --prefix frontend run lint
+cd backend && ./mvnw -q -DskipTests checkstyle:check
+```
+
+A GitHub, el workflow `.github/workflows/lint.yml` valida automaticament frontend i backend a cada push i PR.
