@@ -6,6 +6,7 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
+import java.time.LocalDateTime;
 import java.util.List;
 
 public interface AlertRepository extends JpaRepository<Alert, Long> {
@@ -20,6 +21,12 @@ public interface AlertRepository extends JpaRepository<Alert, Long> {
     List<Alert> findByCompanyIdAndStatus(@Param("companyId") Long companyId, @Param("status") AlertStatus status);
 
     boolean existsByLogId(Long logId);
+
+    boolean existsByCompanyIdAndRuleKeyAndFingerprintAndCreatedAtAfter(
+            Long companyId,
+            String ruleKey,
+            String fingerprint,
+            LocalDateTime createdAt);
 
     long countByCompanyId(Long companyId);
 

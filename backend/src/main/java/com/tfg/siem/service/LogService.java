@@ -72,7 +72,7 @@ public class LogService {
         }
 
         Log savedLog = logRepository.save(log);
-        alertService.createCriticalAlertIfNeeded(savedLog);
+        alertService.evaluateDetectionRules(savedLog);
 
         return mapToResponse(savedLog);
     }

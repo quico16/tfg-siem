@@ -4,14 +4,21 @@ import { dashboardService } from '../services/dashboardService'
 import { alertService } from '../services/alertService'
 import { logService } from '../services/logService'
 
+function formatDateOnly(date) {
+  const year = date.getFullYear()
+  const month = String(date.getMonth() + 1).padStart(2, '0')
+  const day = String(date.getDate()).padStart(2, '0')
+  return `${year}-${month}-${day}`
+}
+
 function getDefaultDateRange() {
   const end = new Date()
   const start = new Date()
   start.setDate(end.getDate() - 7)
 
   return {
-    startDate: start.toISOString().slice(0, 16),
-    endDate: end.toISOString().slice(0, 16)
+    startDate: formatDateOnly(start),
+    endDate: formatDateOnly(end)
   }
 }
 
@@ -64,6 +71,8 @@ export function useDashboardViewModel() {
   const [logAlertLinkFilter, setLogAlertLinkFilter] = useState('ALL')
   const [logHourStartFilter, setLogHourStartFilter] = useState('ALL')
   const [logHourEndFilter, setLogHourEndFilter] = useState('ALL')
+  const [alertHourStartFilter, setAlertHourStartFilter] = useState('ALL')
+  const [alertHourEndFilter, setAlertHourEndFilter] = useState('ALL')
 
   const defaults = getDefaultDateRange()
   const [startDate, setStartDate] = useState(defaults.startDate)
@@ -117,7 +126,7 @@ export function useDashboardViewModel() {
             dashboardService.getSummary(companyId),
             dashboardService.getLevels(companyId),
             alertService.getAll(companyId),
-            logService.getAll(companyId, startDate, endDate)
+            logService.getAll(companyId, `${startDate}T00:00:00`, `${endDate}T23:59:59`)
           ])
 
           return {
@@ -212,6 +221,8 @@ export function useDashboardViewModel() {
 
   const filteredAlerts = useMemo(() => {
     let nextAlerts = alerts
+    const startHour = alertHourStartFilter === 'ALL' ? null : Number(alertHourStartFilter)
+    const endHour = alertHourEndFilter === 'ALL' ? null : Number(alertHourEndFilter)
 
     if (alertStatusFilter === 'OPEN') {
       nextAlerts = nextAlerts.filter((alert) => alert.status === 'OPEN')
@@ -219,6 +230,20 @@ export function useDashboardViewModel() {
 
     if (alertStatusFilter === 'CLOSED') {
       nextAlerts = nextAlerts.filter((alert) => alert.status === 'CLOSED')
+    }
+
+    if (startHour != null && endHour != null) {
+      nextAlerts = nextAlerts.filter((alert) => {
+        const alertHour = getHourFromTimestamp(alert.createdAt)
+        if (alertHour == null) {
+          return false
+        }
+
+        const isSameDayRange = startHour <= endHour
+        return isSameDayRange
+          ? alertHour >= startHour && alertHour <= endHour
+          : alertHour >= startHour || alertHour <= endHour
+      })
     }
 
     if (isAllCompaniesSelected && affectedCompaniesFilterMode === 'SELECT_COMPANIES') {
@@ -292,6 +317,8 @@ export function useDashboardViewModel() {
     alerts,
     alertsForCorrelation,
     alertStatusFilter,
+    alertHourStartFilter,
+    alertHourEndFilter,
     isAllCompaniesSelected,
     affectedCompaniesFilterMode,
     affectedAlertsViewMode,
@@ -486,7 +513,11 @@ export function useDashboardViewModel() {
     logHourStartFilter,
     setLogHourStartFilter,
     logHourEndFilter,
-    setLogHourEndFilter
+    setLogHourEndFilter,
+    alertHourStartFilter,
+    setAlertHourStartFilter,
+    alertHourEndFilter,
+    setAlertHourEndFilter
   }
 }
 

@@ -36,6 +36,15 @@ public class Alert {
     @Column(nullable = false, length = 20)
     private LogLevel severity;
 
+    @Column(length = 80)
+    private String ruleKey;
+
+    @Column(length = 255)
+    private String fingerprint;
+
+    @Column(length = 255)
+    private String correlationKey;
+
     @Column(nullable = false, length = 1000)
     private String message;
 
@@ -67,6 +76,18 @@ public class Alert {
         return severity;
     }
 
+    public String getRuleKey() {
+        return ruleKey;
+    }
+
+    public String getFingerprint() {
+        return fingerprint;
+    }
+
+    public String getCorrelationKey() {
+        return correlationKey;
+    }
+
     public String getMessage() {
         return message;
     }
@@ -89,6 +110,18 @@ public class Alert {
 
     public void setSeverity(LogLevel severity) {
         this.severity = severity;
+    }
+
+    public void setRuleKey(String ruleKey) {
+        this.ruleKey = ruleKey;
+    }
+
+    public void setFingerprint(String fingerprint) {
+        this.fingerprint = fingerprint;
+    }
+
+    public void setCorrelationKey(String correlationKey) {
+        this.correlationKey = correlationKey;
     }
 
     public void setMessage(String message) {
