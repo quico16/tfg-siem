@@ -12,6 +12,9 @@ public class AlertResponse {
     private String companyName;
     private Long logId;
     private LogLevel severity;
+    private String ruleKey;
+    private String fingerprint;
+    private String correlationKey;
     private String message;
     private AlertStatus status;
     private LocalDateTime createdAt;
@@ -37,6 +40,18 @@ public class AlertResponse {
 
     public LogLevel getSeverity() {
         return severity;
+    }
+
+    public String getRuleKey() {
+        return ruleKey;
+    }
+
+    public String getFingerprint() {
+        return fingerprint;
+    }
+
+    public String getCorrelationKey() {
+        return correlationKey;
     }
 
     public String getMessage() {
@@ -69,6 +84,18 @@ public class AlertResponse {
 
     public void setSeverity(LogLevel severity) {
         this.severity = severity;
+    }
+
+    public void setRuleKey(String ruleKey) {
+        this.ruleKey = ruleKey;
+    }
+
+    public void setFingerprint(String fingerprint) {
+        this.fingerprint = fingerprint;
+    }
+
+    public void setCorrelationKey(String correlationKey) {
+        this.correlationKey = correlationKey;
     }
 
     public void setMessage(String message) {

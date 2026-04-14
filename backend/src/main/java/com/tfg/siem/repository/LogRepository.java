@@ -16,6 +16,28 @@ public interface LogRepository extends JpaRepository<Log, Long> {
     @Query("SELECT l FROM Log l JOIN FETCH l.company JOIN FETCH l.source WHERE l.company.id = :companyId AND l.timestamp BETWEEN :start AND :end ORDER BY l.timestamp DESC")
     List<Log> findByCompanyIdAndTimestampBetween(Long companyId, LocalDateTime start, LocalDateTime end);
 
+    @Query("""
+            SELECT l
+            FROM Log l
+            JOIN FETCH l.company
+            JOIN FETCH l.source
+            WHERE l.company.id = :companyId
+              AND l.ip = :ip
+              AND l.timestamp BETWEEN :start AND :end
+            ORDER BY l.timestamp DESC
+            """)
+    List<Log> findByCompanyIdAndIpAndTimestampBetween(Long companyId, String ip, LocalDateTime start, LocalDateTime end);
+
+    @Query("""
+            SELECT l
+            FROM Log l
+            JOIN FETCH l.company
+            JOIN FETCH l.source
+            WHERE l.timestamp BETWEEN :start AND :end
+            ORDER BY l.timestamp DESC
+            """)
+    List<Log> findByTimestampBetween(LocalDateTime start, LocalDateTime end);
+
     long countByCompanyId(Long companyId);
 
     long countByCompanyIdAndLevel(Long companyId, LogLevel level);

@@ -72,7 +72,7 @@ public class LogService {
         }
 
         Log savedLog = logRepository.save(log);
-        alertService.createCriticalAlertIfNeeded(savedLog);
+        alertService.evaluateDetectionRules(savedLog);
 
         return mapToResponse(savedLog);
     }
@@ -84,7 +84,7 @@ public class LogService {
 
         List<Log> logs;
 
-        // Caso inválido: solo una fecha informada
+        // Invalid case: only one date provided
         if ((start != null && end == null) || (start == null && end != null)) {
             throw new BadRequestException("Both start and end dates must be provided together");
         }

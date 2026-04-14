@@ -1,6 +1,7 @@
 package com.tfg.siem.controller;
 
 import com.tfg.siem.dto.AlertResponse;
+import com.tfg.siem.dto.CrossCompanyAlertResponse;
 import com.tfg.siem.service.AlertService;
 import org.springframework.web.bind.annotation.*;
 
@@ -24,6 +25,13 @@ public class AlertController {
     @GetMapping("/company/{companyId}/open")
     public List<AlertResponse> getOpenAlertsByCompany(@PathVariable Long companyId) {
         return alertService.getOpenAlertsByCompany(companyId);
+    }
+
+    @GetMapping("/cross-company")
+    public List<CrossCompanyAlertResponse> getCrossCompanyAlerts(
+            @RequestParam List<Long> companyIds,
+            @RequestParam(required = false, defaultValue = "2") Integer minAffectedCompanies) {
+        return alertService.getCrossCompanyAlerts(companyIds, minAffectedCompanies);
     }
 
     @PatchMapping("/{alertId}/close")
