@@ -10,6 +10,7 @@ import LogsTable from '../components/LogsTable'
 
 export default function DashboardView() {
   const vm = useDashboardViewModel()
+  const hourOptions = Array.from({ length: 24 }, (_, hour) => String(hour))
 
   return (
     <div style={{ padding: '24px' }}>
@@ -173,6 +174,46 @@ export default function DashboardView() {
             <option value="WITH_RAW">Nomes amb raw</option>
             <option value="WITHOUT_RAW">Nomes sense raw</option>
           </select>
+
+          <select
+            value={vm.logAlertLinkFilter}
+            onChange={(e) => vm.setLogAlertLinkFilter(e.target.value)}
+          >
+            <option value="ALL">Alerta asociada: todos</option>
+            <option value="WITH_ASSOCIATED_ALERT">Solo con alerta asociada</option>
+            <option value="WITHOUT_ASSOCIATED_ALERT">Solo sin alerta asociada</option>
+          </select>
+
+          <select value={vm.logCountryFilter} onChange={(e) => vm.setLogCountryFilter(e.target.value)}>
+            <option value="ALL">Pais IP: todos</option>
+            {vm.availableLogCountries.map((country) => (
+              <option key={country} value={country}>
+                {country}
+              </option>
+            ))}
+          </select>
+
+          <div style={{ display: 'flex', gap: '6px' }}>
+            <select
+              value={vm.logHourStartFilter}
+              onChange={(e) => vm.setLogHourStartFilter(e.target.value)}
+            >
+              <option value="ALL">Hora inicio</option>
+              {hourOptions.map((hour) => (
+                <option key={`start-${hour}`} value={hour}>
+                  {hour.padStart(2, '0')}:00
+                </option>
+              ))}
+            </select>
+            <select value={vm.logHourEndFilter} onChange={(e) => vm.setLogHourEndFilter(e.target.value)}>
+              <option value="ALL">Hora fin</option>
+              {hourOptions.map((hour) => (
+                <option key={`end-${hour}`} value={hour}>
+                  {hour.padStart(2, '0')}:59
+                </option>
+              ))}
+            </select>
+          </div>
 
           <input
             type="text"

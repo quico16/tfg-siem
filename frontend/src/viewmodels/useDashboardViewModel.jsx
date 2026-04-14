@@ -27,6 +27,58 @@ function buildCorrelationKey(alert) {
   return `${alert.severity}|${normalizeAlertMessage(alert.message)}`
 }
 
+function extractCountryFromRawLog(rawLog) {
+  if (!rawLog || typeof rawLog !== 'object') {
+    return 'UNKNOWN'
+  }
+
+  const candidatePaths = [
+    ['country'],
+    ['countryName'],
+    ['country_name'],
+    ['geo', 'country'],
+    ['geo', 'countryName'],
+    ['geo', 'country_name'],
+    ['location', 'country'],
+    ['location', 'countryName'],
+    ['location', 'country_name'],
+    ['geoip', 'country'],
+    ['geoip', 'countryName'],
+    ['geoip', 'country_name']
+  ]
+
+  for (const path of candidatePaths) {
+    let current = rawLog
+
+    for (const key of path) {
+      if (current == null || typeof current !== 'object') {
+        current = null
+        break
+      }
+      current = current[key]
+    }
+
+    if (typeof current === 'string' && current.trim().length > 0) {
+      return current.trim()
+    }
+  }
+
+  return 'UNKNOWN'
+}
+
+function getHourFromTimestamp(timestamp) {
+  if (!timestamp) {
+    return null
+  }
+
+  const date = new Date(timestamp)
+  if (Number.isNaN(date.getTime())) {
+    return null
+  }
+
+  return date.getHours()
+}
+
 export function useDashboardViewModel() {
   const [companies, setCompanies] = useState([])
   const [selectedCompanyId, setSelectedCompanyId] = useState('')
@@ -49,6 +101,10 @@ export function useDashboardViewModel() {
   const [logIpFilter, setLogIpFilter] = useState('')
   const [logSearchFilter, setLogSearchFilter] = useState('')
   const [logRawFilter, setLogRawFilter] = useState('ALL')
+  const [logAlertLinkFilter, setLogAlertLinkFilter] = useState('ALL')
+  const [logCountryFilter, setLogCountryFilter] = useState('ALL')
+  const [logHourStartFilter, setLogHourStartFilter] = useState('ALL')
+  const [logHourEndFilter, setLogHourEndFilter] = useState('ALL')
 
   const defaults = getDefaultDateRange()
   const [startDate, setStartDate] = useState(defaults.startDate)
@@ -304,11 +360,41 @@ export function useDashboardViewModel() {
     return Array.from(values).sort((a, b) => a.localeCompare(b))
   }, [logs])
 
+  const alertsByLogId = useMemo(() => {
+    const ids = new Set()
+    alerts.forEach((alert) => {
+      if (alert.logId != null) {
+        ids.add(String(alert.logId))
+      }
+    })
+    return ids
+  }, [alerts])
+
+  const logsWithDerivedFields = useMemo(
+    () =>
+      logs.map((log) => ({
+        ...log,
+        ipCountry: extractCountryFromRawLog(log.rawLog),
+        hasAssociatedAlert: alertsByLogId.has(String(log.id))
+      })),
+    [logs, alertsByLogId]
+  )
+
+  const availableLogCountries = useMemo(() => {
+    const values = new Set()
+    logsWithDerivedFields.forEach((log) => {
+      values.add(log.ipCountry || 'UNKNOWN')
+    })
+    return Array.from(values).sort((a, b) => a.localeCompare(b))
+  }, [logsWithDerivedFields])
+
   const filteredLogs = useMemo(() => {
     const normalizedSearch = logSearchFilter.trim().toLowerCase()
     const normalizedIp = logIpFilter.trim().toLowerCase()
+    const startHour = logHourStartFilter === 'ALL' ? null : Number(logHourStartFilter)
+    const endHour = logHourEndFilter === 'ALL' ? null : Number(logHourEndFilter)
 
-    return logs.filter((log) => {
+    return logsWithDerivedFields.filter((log) => {
       if (logLevelFilter !== 'ALL' && log.level !== logLevelFilter) {
         return false
       }
@@ -329,6 +415,34 @@ export function useDashboardViewModel() {
         return false
       }
 
+      if (logAlertLinkFilter === 'WITH_ASSOCIATED_ALERT' && !log.hasAssociatedAlert) {
+        return false
+      }
+
+      if (logAlertLinkFilter === 'WITHOUT_ASSOCIATED_ALERT' && log.hasAssociatedAlert) {
+        return false
+      }
+
+      if (logCountryFilter !== 'ALL' && log.ipCountry !== logCountryFilter) {
+        return false
+      }
+
+      if (startHour != null && endHour != null) {
+        const logHour = getHourFromTimestamp(log.timestamp)
+        if (logHour == null) {
+          return false
+        }
+
+        const isSameDayRange = startHour <= endHour
+        const isWithinRange = isSameDayRange
+          ? logHour >= startHour && logHour <= endHour
+          : logHour >= startHour || logHour <= endHour
+
+        if (!isWithinRange) {
+          return false
+        }
+      }
+
       if (normalizedIp.length > 0 && !String(log.ip ?? '').toLowerCase().includes(normalizedIp)) {
         return false
       }
@@ -340,7 +454,8 @@ export function useDashboardViewModel() {
           log.sourceType,
           log.companyName,
           log.level,
-          log.ip
+          log.ip,
+          log.ipCountry
         ]
           .filter(Boolean)
           .join(' ')
@@ -354,13 +469,17 @@ export function useDashboardViewModel() {
       return true
     })
   }, [
-    logs,
+    logsWithDerivedFields,
     logLevelFilter,
     logSourceFilter,
     logSourceTypeFilter,
     logIpFilter,
     logSearchFilter,
-    logRawFilter
+    logRawFilter,
+    logAlertLinkFilter,
+    logCountryFilter,
+    logHourStartFilter,
+    logHourEndFilter
   ])
 
   useEffect(() => {
@@ -402,6 +521,7 @@ export function useDashboardViewModel() {
     filteredAlerts,
     availableLogSources,
     availableLogSourceTypes,
+    availableLogCountries,
     filteredLogs,
     loading,
     error,
@@ -428,6 +548,14 @@ export function useDashboardViewModel() {
     logSearchFilter,
     setLogSearchFilter,
     logRawFilter,
-    setLogRawFilter
+    setLogRawFilter,
+    logAlertLinkFilter,
+    setLogAlertLinkFilter,
+    logCountryFilter,
+    setLogCountryFilter,
+    logHourStartFilter,
+    setLogHourStartFilter,
+    logHourEndFilter,
+    setLogHourEndFilter
   }
 }

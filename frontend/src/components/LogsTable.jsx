@@ -40,6 +40,8 @@ export default function LogsTable({ logs }) {
           <th>Origen</th>
           <th>Tipo origen</th>
           <th>Nivel</th>
+          <th>Alerta asociada</th>
+          <th>Pais IP</th>
           <th>IP</th>
           <th>Mensaje</th>
           <th>Raw log</th>
@@ -53,6 +55,8 @@ export default function LogsTable({ logs }) {
             <td>{log.sourceName ?? '-'}</td>
             <td>{log.sourceType ?? '-'}</td>
             <td>{log.level ?? '-'}</td>
+            <td>{log.hasAssociatedAlert ? 'Si' : 'No'}</td>
+            <td>{log.ipCountry ?? 'UNKNOWN'}</td>
             <td>{log.ip ?? '-'}</td>
             <td>{log.message ?? '-'}</td>
             <td>{renderRawLog(log.rawLog)}</td>
