@@ -1,62 +1,62 @@
-# TFG - SIEM Platform with Cybersecurity Dashboard
+# TFG - Plataforma SIEM amb Dashboard de Ciberseguretat
 
-This project is a Final Degree Project (TFG) that implements a platform inspired by a SIEM (Security Information and Event Management) solution with a web dashboard.
+Aquest projecte correspon al Treball de Final de Grau (TFG) i consisteix en el desenvolupament d'una plataforma inspirada en un SIEM (Security Information and Event Management) amb dashboard web.
 
-The goal is to collect, process, analyze, and visualize security logs from different sources to detect incidents and anomalous behavior.
+L'objectiu del sistema és recollir, processar, analitzar i visualitzar logs de seguretat provinents de diferents fonts per detectar incidents i comportaments anòmals.
 
-## Project Goals
+## Objectius del projecte
 
-- Collect logs from different security sources
-- Normalize logs into a common model
-- Store data in a centralized database
-- Detect incidents or anomalies
-- Present operational data in an interactive dashboard
+- Recollir logs de diferents fonts de seguretat
+- Normalitzar els logs en un model comú
+- Emmagatzemar la informació en una base de dades centralitzada
+- Detectar incidents o anomalies
+- Mostrar la informació en un dashboard web interactiu
 
-## System Architecture
+## Arquitectura del sistema
 
 ```
 React (Frontend)
     ->
 Spring Boot API (Backend)
     ->
-PostgreSQL (Database)
+PostgreSQL (Base de dades)
 ```
 
 ### Frontend
 
-The frontend is built with React and Vite and follows an MVVM structure:
+El frontend està desenvolupat amb React i Vite i segueix una estructura MVVM:
 
-- `views`: UI screens
-- `viewmodels`: presentation and state logic
-- `services`: API communication
-- `models`: frontend data models
-- `components`: reusable UI components
+- `views`: pantalles d'interfície
+- `viewmodels`: lògica d'estat i presentació
+- `services`: comunicació amb l'API
+- `models`: models de dades frontend
+- `components`: components reutilitzables
 
 ### Backend
 
-The backend is built with Spring Boot and exposes REST APIs for:
+El backend està implementat amb Spring Boot i exposa APIs REST per gestionar:
 
-- Log ingestion
-- Event normalization
-- Company and source management
-- Alert creation and management
+- Ingesta de logs
+- Normalització d'esdeveniments
+- Gestió d'empreses i fonts
+- Generació i gestió d'alertes
 
-Layered backend structure:
+Estructura en capes:
 
-- `controller`: REST endpoints
-- `service`: business logic
-- `repository`: persistence access
-- `model`: JPA entities
-- `dto`: API payloads
-- `exception`: exception handling
+- `controller`: endpoints REST
+- `service`: lògica de negoci
+- `repository`: accés a persistència
+- `model`: entitats JPA
+- `dto`: payloads d'API
+- `exception`: gestió d'excepcions
 
-### Database
+### Base de dades
 
-PostgreSQL stores companies, sources, logs, and alerts.
+S'utilitza PostgreSQL per emmagatzemar empreses, fonts, logs i alertes.
 
-The database is provisioned through Docker Compose for reproducible local environments.
+La base de dades s'aixeca amb Docker Compose per garantir un entorn local reproductible.
 
-## Tech Stack
+## Tecnologies
 
 ### Frontend
 - React
@@ -68,18 +68,18 @@ The database is provisioned through Docker Compose for reproducible local enviro
 - Spring Boot
 - Spring Data JPA
 
-### Database
+### Base de dades
 - PostgreSQL
 
-### Infrastructure
+### Infraestructura
 - Docker
 - Docker Compose
 
-### Version Control
+### Control de versions
 - Git
 - GitHub
 
-## Repository Structure
+## Estructura del repositori
 
 ```
 tfg-siem/
@@ -89,7 +89,7 @@ tfg-siem/
 +-- docs/
 ```
 
-## Prerequisites
+## Requisits previs
 
 - Git
 - Docker Desktop
@@ -97,38 +97,38 @@ tfg-siem/
 - Node.js (LTS)
 - npm
 
-## Setup and Run
+## Instal·lació i execució
 
-### 1. Clone the repository
+### 1. Clonar el repositori
 
 ```bash
 git clone https://github.com/quico16/tfg-siem.git
 cd tfg-siem
 ```
 
-### 2. Start PostgreSQL
+### 2. Arrencar PostgreSQL
 
 ```bash
 cd infra
 docker compose up -d
 ```
 
-Check container status:
+Comprovar l'estat dels contenidors:
 
 ```bash
 docker ps
 ```
 
-### 3. Run the backend
+### 3. Arrencar el backend
 
 ```bash
 cd backend
 ./mvnw spring-boot:run
 ```
 
-Backend URL: `http://localhost:8080`
+Backend: `http://localhost:8080`
 
-### 4. Run the frontend
+### 4. Arrencar el frontend
 
 ```bash
 cd frontend
@@ -136,22 +136,22 @@ npm install
 npm run dev
 ```
 
-Frontend URL: `http://localhost:5173`
+Frontend: `http://localhost:5173`
 
-## Frontend Proxy
+## Proxy frontend -> backend
 
-Vite is configured to proxy API requests:
+Vite està configurat per redirigir les crides API:
 
 - `/api` -> `http://localhost:8080`
 
-This avoids CORS issues during local development.
+Això evita problemes de CORS durant el desenvolupament local.
 
-## Author
+## Autor
 
 Francesc Navarro Vázquez  
-Final Degree Project - Cybersecurity
+Treball de Final de Grau - Ciberseguretat
 
-## Optional Seed Command
+## Comanda opcional de seed
 
 ```powershell
 powershell -ExecutionPolicy Bypass -File .\seed-data-varied-dates.ps1

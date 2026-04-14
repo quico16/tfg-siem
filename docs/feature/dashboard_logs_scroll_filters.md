@@ -1,61 +1,61 @@
-# Branch Notes: feature/logs-scroll-filters
+# Documentació de branca: feature/logs-scroll-filters
 
-## Functional Goal
+## Objectiu funcional
 
-Improve the dashboard from a summary-only logs area to an operational log analysis panel:
+Millorar el dashboard per passar d'un resum de logs a una vista operativa:
 
-- Scrollable log list
-- Practical filters for fast triage
-- Consistency with selected company scope and date range
+- Llistat de logs consultable amb scroll
+- Filtres útils per anàlisi ràpida
+- Coherència amb l'empresa (o empreses) seleccionada/es i el rang temporal
 
-## Decisions and Rationale
+## Decisions preses i motiu
 
-### 1) Scrollable logs panel in dashboard
-Decision: Add a `Log Details` section with a table inside a vertical scroll container.  
-Why: Prevents page overflow and allows analysts to review recent history without breaking layout.
+### 1) Panell de logs amb scroll al dashboard
+Decisió: afegir un bloc `Detall de logs` amb taula dins d'un contenidor amb scroll vertical.  
+Per què: evita trencar el layout quan hi ha molt volum i facilita revisar l'històric recent.
 
-### 2) Load logs by company + date range
-Decision: Use `logService.getAll(companyId, startDate, endDate)` for each company in scope.  
-Why: Reuses existing API and keeps panel data synchronized with selected company and date filter.
+### 2) Càrrega de logs per empresa + rang de dates
+Decisió: carregar logs amb `logService.getAll(companyId, startDate, endDate)` per cada empresa en scope.  
+Per què: reutilitza l'API existent i manté el panell sincronitzat amb selector d'empresa i filtre temporal.
 
-### 3) Implemented filters
-Decision: Keep these active filters:
+### 3) Filtres implementats
+Decisió: mantenir aquests filtres actius:
 
-- Level (`INFO`, `WARNING`, `CRITICAL`)
-- Source (`sourceName`)
-- Source type (`sourceType`)
-- IP (partial match)
-- Free text search (`message`, `company`, `source`, `level`, `IP`)
-- Linked alert (`all`, `only with linked alert`, `only without linked alert`)
-- Hour range (`start hour` / `end hour`, including ranges crossing midnight)
+- Nivell (`INFO`, `WARNING`, `CRITICAL`)
+- Origen (`sourceName`)
+- Tipus d'origen (`sourceType`)
+- IP (coincidència parcial)
+- Cerca lliure de text (`message`, `company`, `source`, `level`, `IP`)
+- Alerta associada (`totes`, `només amb alerta`, `només sense alerta`)
+- Rang d'hora (`hora inici` / `hora fi`, incloent rangs que creuen mitjanit)
 
-Why: These cover common SOC triage workflows: severity, technical context, IP focus, alert linkage, and time windows.
+Per què: cobreixen els casos habituals de triatge SOC.
 
-### 4) Removed IP country filter
-Decision: Remove the `country` filter and column entirely.  
-Why: Current data consistently returned `UNKNOWN`, adding noise with low operational value.
+### 4) Eliminació del filtre de país IP
+Decisió: eliminar completament filtre i columna de `país`.  
+Per què: amb les dades actuals retornava `UNKNOWN` de forma sistemàtica.
 
-### 5) Removed has/raw filter
-Decision: Remove the `raw presence` filter but keep the `Raw log` column.  
-Why: All current logs include raw payload, so the filter did not separate useful sets.
+### 5) Eliminació del filtre amb/sense raw
+Decisió: retirar aquest filtre, mantenint la columna `Raw log`.  
+Per què: tots els logs actuals tenen `raw`, així que el filtre no aportava separació útil.
 
-### 6) Expandable raw log column
-Decision: Keep `details/summary` to expand row-level `rawLog` JSON.  
-Why: Preserves table density while keeping deep inspection available on demand.
+### 6) Columna `Raw log` expandible
+Decisió: mantenir `details/summary` per obrir el JSON `rawLog` per fila.  
+Per què: equilibra usabilitat i densitat d'informació.
 
-## Files Updated in This Iteration
+## Fitxers modificats en aquesta iteració
 
 - `frontend/src/viewmodels/useDashboardViewModel.jsx`
 - `frontend/src/views/DashboardView.jsx`
 - `frontend/src/components/LogsTable.jsx`
 - `frontend/src/index.css`
 
-## Validation
+## Validació executada
 
 - `npm run build` (frontend): OK
 
-## Final Status
+## Estat final
 
-- Scrollable logs panel is operational
-- Filters are active and aligned with current data quality
-- Low-value filters removed (`country`, `raw presence`)
+- Panell de logs amb scroll operatiu
+- Filtres actius i coherents amb les dades disponibles
+- Neteja de filtres de poc valor (`país`, `raw presence`)
