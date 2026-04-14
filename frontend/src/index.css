@@ -37,11 +37,13 @@ table {
 .dashboard-alerts-scroll-container {
   max-height: 420px;
   overflow-y: auto;
+  overflow-x: auto;
 }
 
 .dashboard-logs-scroll-container {
   max-height: 460px;
   overflow-y: auto;
+  overflow-x: auto;
 }
 
 .logs-filters-grid {
@@ -50,11 +52,45 @@ table {
   gap: 10px;
 }
 
+.section-header-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.section-fold-header {
+  cursor: pointer;
+  user-select: none;
+}
+
 .log-raw-pre {
-  max-width: 360px;
+  max-width: 100%;
+  max-height: 60vh;
   overflow-x: auto;
+  overflow-y: auto;
   white-space: pre-wrap;
   word-break: break-word;
+}
+
+.raw-log-modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(15, 23, 42, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 999;
+  padding: 16px;
+}
+
+.raw-log-modal-content {
+  width: min(900px, 95vw);
+  max-height: 85vh;
+  background: #ffffff;
+  border-radius: 10px;
+  border: 1px solid #d1d5db;
+  padding: 16px;
 }
 
 th, td {
@@ -62,6 +98,13 @@ th, td {
   padding: 10px;
   text-align: left;
   vertical-align: top;
+}
+
+.sticky-header-table thead th {
+  position: sticky;
+  top: 0;
+  z-index: 2;
+  background: #ffffff;
 }
 
 .card {

@@ -7,12 +7,12 @@ export default function DateRangeFilter({
   return (
     <div>
       <input
-        type="datetime-local"
+        type="date"
         value={startDate}
         onChange={(e) => onStartDateChange(e.target.value)}
       />
       <input
-        type="datetime-local"
+        type="date"
         value={endDate}
         onChange={(e) => onEndDateChange(e.target.value)}
       />
