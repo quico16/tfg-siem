@@ -92,7 +92,7 @@ export function useDashboardViewModel() {
         setSelectedCompanyId('ALL')
       }
     } catch (err) {
-      setError('Error carregant empreses')
+      setError('Failed to load companies')
       console.error(err)
     }
   }, [selectedCompanyId])
@@ -182,7 +182,7 @@ export function useDashboardViewModel() {
       setAlerts(mergedAlerts)
       setAlertsForCorrelation(correlationAlerts)
     } catch (err) {
-      setError('Error carregant dades del dashboard')
+      setError('Failed to load dashboard data')
       console.error(err)
     } finally {
       setLoading(false)
@@ -194,7 +194,7 @@ export function useDashboardViewModel() {
       await alertService.closeAlert(alertId)
       await loadDashboardData()
     } catch (err) {
-      setError('No s’ha pogut tancar l’alerta')
+      setError('Failed to close alert')
       console.error(err)
     }
   }
@@ -206,7 +206,7 @@ export function useDashboardViewModel() {
 
     return companies.map((company) => ({
       id: String(company.id),
-      name: company.name ?? `Empresa ${company.id}`
+      name: company.name ?? `Company ${company.id}`
     }))
   }, [companies, isAllCompaniesSelected])
 
@@ -268,7 +268,7 @@ export function useDashboardViewModel() {
     correlationSourceAlerts.forEach((alert) => {
       const key = buildCorrelationKey(alert)
       const companiesForKey = keyToCompanies.get(key) || new Map()
-      companiesForKey.set(String(alert.companyId), alert.companyName ?? `Empresa ${alert.companyId}`)
+      companiesForKey.set(String(alert.companyId), alert.companyName ?? `Company ${alert.companyId}`)
       keyToCompanies.set(key, companiesForKey)
     })
 
@@ -279,8 +279,8 @@ export function useDashboardViewModel() {
       const affectedCompanyNames = Array.from(affectedCompaniesMap.values())
       const sharedTypeLabel =
         companiesAffectedCount > 1
-          ? `Compartida (${companiesAffectedCount}/${scopeCompanyCount})`
-          : `Unica (${companiesAffectedCount}/${scopeCompanyCount})`
+          ? `Shared (${companiesAffectedCount}/${scopeCompanyCount})`
+          : `Unique (${companiesAffectedCount}/${scopeCompanyCount})`
 
       return {
         ...alert,
@@ -489,3 +489,5 @@ export function useDashboardViewModel() {
     setLogHourEndFilter
   }
 }
+
+

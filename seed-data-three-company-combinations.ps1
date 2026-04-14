@@ -67,7 +67,7 @@ function Create-Log {
     }
 }
 
-$companyNames = @("Empresa Demo", "Empresa Demo 2", "Empresa Demo 3")
+$companyNames = @("Demo Company", "Demo Company 2", "Demo Company 3")
 $companyMap = @{}
 $sourceMap = @{}
 
@@ -77,7 +77,7 @@ foreach ($companyName in $companyNames) {
     $companyMap[$companyName] = $companyId
 
     $sourceMap[$companyName] = @{
-        FIREWALL = (Ensure-Source -CompanyId $companyId -Name "Firewall Principal" -Type "FIREWALL").id
+        FIREWALL = (Ensure-Source -CompanyId $companyId -Name "Main Firewall" -Type "FIREWALL").id
         EDR = (Ensure-Source -CompanyId $companyId -Name "EDR CrowdStrike" -Type "EDR").id
         MAIL = (Ensure-Source -CompanyId $companyId -Name "Mail Gateway" -Type "MAIL").id
     }
@@ -108,26 +108,27 @@ function Add-CombinationLogs {
     }
 }
 
-Add-CombinationLogs -Targets @("Empresa Demo", "Empresa Demo 2", "Empresa Demo 3") -SourceType "EDR" -Level "CRITICAL" -Message "Shared ransomware activity detected" -EventName "shared_ransomware"
-Add-CombinationLogs -Targets @("Empresa Demo", "Empresa Demo 2") -SourceType "FIREWALL" -Level "CRITICAL" -Message "Credential stuffing attack detected" -EventName "credential_stuffing"
-Add-CombinationLogs -Targets @("Empresa Demo 2", "Empresa Demo 3") -SourceType "MAIL" -Level "CRITICAL" -Message "Shared phishing campaign delivered" -EventName "shared_phishing_campaign"
-Add-CombinationLogs -Targets @("Empresa Demo", "Empresa Demo 3") -SourceType "EDR" -Level "CRITICAL" -Message "Lateral movement attempt observed" -EventName "lateral_movement_attempt"
+Add-CombinationLogs -Targets @("Demo Company", "Demo Company 2", "Demo Company 3") -SourceType "EDR" -Level "CRITICAL" -Message "Shared ransomware activity detected" -EventName "shared_ransomware"
+Add-CombinationLogs -Targets @("Demo Company", "Demo Company 2") -SourceType "FIREWALL" -Level "CRITICAL" -Message "Credential stuffing attack detected" -EventName "credential_stuffing"
+Add-CombinationLogs -Targets @("Demo Company 2", "Demo Company 3") -SourceType "MAIL" -Level "CRITICAL" -Message "Shared phishing campaign delivered" -EventName "shared_phishing_campaign"
+Add-CombinationLogs -Targets @("Demo Company", "Demo Company 3") -SourceType "EDR" -Level "CRITICAL" -Message "Lateral movement attempt observed" -EventName "lateral_movement_attempt"
 
-Add-CombinationLogs -Targets @("Empresa Demo") -SourceType "MAIL" -Level "CRITICAL" -Message "CEO fraud attempt blocked" -EventName "ceo_fraud"
-Add-CombinationLogs -Targets @("Empresa Demo 2") -SourceType "FIREWALL" -Level "CRITICAL" -Message "Unauthorized VPN tunnel detected" -EventName "unauthorized_vpn"
-Add-CombinationLogs -Targets @("Empresa Demo 3") -SourceType "EDR" -Level "CRITICAL" -Message "Privileged escalation exploit blocked" -EventName "privilege_escalation_blocked"
+Add-CombinationLogs -Targets @("Demo Company") -SourceType "MAIL" -Level "CRITICAL" -Message "CEO fraud attempt blocked" -EventName "ceo_fraud"
+Add-CombinationLogs -Targets @("Demo Company 2") -SourceType "FIREWALL" -Level "CRITICAL" -Message "Unauthorized VPN tunnel detected" -EventName "unauthorized_vpn"
+Add-CombinationLogs -Targets @("Demo Company 3") -SourceType "EDR" -Level "CRITICAL" -Message "Privileged escalation exploit blocked" -EventName "privilege_escalation_blocked"
 
-Add-CombinationLogs -Targets @("Empresa Demo", "Empresa Demo 2", "Empresa Demo 3") -SourceType "MAIL" -Level "WARNING" -Message "Suspicious domain in incoming email" -EventName "suspicious_domain_mail"
-Add-CombinationLogs -Targets @("Empresa Demo", "Empresa Demo 3") -SourceType "FIREWALL" -Level "INFO" -Message "Routine policy update applied" -EventName "policy_update"
+Add-CombinationLogs -Targets @("Demo Company", "Demo Company 2", "Demo Company 3") -SourceType "MAIL" -Level "WARNING" -Message "Suspicious domain in incoming email" -EventName "suspicious_domain_mail"
+Add-CombinationLogs -Targets @("Demo Company", "Demo Company 3") -SourceType "FIREWALL" -Level "INFO" -Message "Routine policy update applied" -EventName "policy_update"
 
-Write-Host "Logs creats en aquesta execucio: $($created.Count)" -ForegroundColor Green
+Write-Host "Logs created in this run: $($created.Count)" -ForegroundColor Green
 
 foreach ($companyName in $companyNames) {
     $companyId = [long]$companyMap[$companyName]
     $alerts = Invoke-ApiGet -Url "$baseUrl/api/alerts/company/$companyId"
     $openAlerts = Invoke-ApiGet -Url "$baseUrl/api/alerts/company/$companyId/open"
 
-    Write-Host ("{0} -> Alertes totals: {1} | Alertes obertes: {2}" -f $companyName, $alerts.Count, $openAlerts.Count) -ForegroundColor Yellow
+    Write-Host ("{0} -> Total alerts: {1} | Open alerts: {2}" -f $companyName, $alerts.Count, $openAlerts.Count) -ForegroundColor Yellow
 }
 
-Write-Host "=== FI SEED 3-COMPANY COMBINATIONS ===" -ForegroundColor Cyan
+Write-Host "=== END SEED 3-COMPANY COMBINATIONS ===" -ForegroundColor Cyan
+

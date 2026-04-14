@@ -18,7 +18,7 @@ function renderRawLog(rawLog) {
 
   return (
     <details>
-      <summary>Ver raw</summary>
+      <summary>View raw</summary>
       <pre className="log-raw-pre">{JSON.stringify(rawLog, null, 2)}</pre>
     </details>
   )
@@ -28,21 +28,21 @@ export default function LogsTable({ logs }) {
   const safeLogs = Array.isArray(logs) ? logs : []
 
   if (safeLogs.length === 0) {
-    return <p style={{ margin: 0 }}>No hay logs para los filtros seleccionados.</p>
+    return <p style={{ margin: 0 }}>No logs found for the selected filters.</p>
   }
 
   return (
     <table>
       <thead>
         <tr>
-          <th>Fecha</th>
-          <th>Empresa</th>
-          <th>Origen</th>
-          <th>Tipo origen</th>
-          <th>Nivel</th>
-          <th>Alerta asociada</th>
+          <th>Date</th>
+          <th>Company</th>
+          <th>Source</th>
+          <th>Source Type</th>
+          <th>Level</th>
+          <th>Linked Alert</th>
           <th>IP</th>
-          <th>Mensaje</th>
+          <th>Message</th>
           <th>Raw log</th>
         </tr>
       </thead>
@@ -54,7 +54,7 @@ export default function LogsTable({ logs }) {
             <td>{log.sourceName ?? '-'}</td>
             <td>{log.sourceType ?? '-'}</td>
             <td>{log.level ?? '-'}</td>
-            <td>{log.hasAssociatedAlert ? 'Si' : 'No'}</td>
+            <td>{log.hasAssociatedAlert ? 'Yes' : 'No'}</td>
             <td>{log.ip ?? '-'}</td>
             <td>{log.message ?? '-'}</td>
             <td>{renderRawLog(log.rawLog)}</td>

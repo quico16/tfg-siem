@@ -41,19 +41,19 @@ $companies = Get-Json -Url "$baseUrl/api/companies"
 $companies | Format-Table -AutoSize | Out-String | Write-Host
 
 if (-not $companies -or $companies.Count -eq 0) {
-    Write-Host "No hay empresas. Ejecuta primero seed-data.ps1" -ForegroundColor Red
+    Write-Host "No companies found. Run seed-data.ps1 first" -ForegroundColor Red
     exit
 }
 
 $companyId = $companies[0].id
-Write-Host "`nUsando companyId = $companyId" -ForegroundColor Green
+Write-Host "`nUsing companyId = $companyId" -ForegroundColor Green
 
 Write-Host "`n[2] GET /api/sources/company/$companyId" -ForegroundColor Yellow
 $sources = Get-Json -Url "$baseUrl/api/sources/company/$companyId"
 $sources | Format-Table -AutoSize | Out-String | Write-Host
 
 if (-not $sources -or $sources.Count -eq 0) {
-    Write-Host "No hay fuentes para la empresa. Ejecuta primero seed-data.ps1" -ForegroundColor Red
+    Write-Host "No sources found for this company. Run seed-data.ps1 first" -ForegroundColor Red
     exit
 }
 
@@ -63,7 +63,7 @@ if (-not $firewall) {
 }
 
 $sourceId = $firewall.id
-Write-Host "`nUsando sourceId = $sourceId para demo crítica" -ForegroundColor Green
+Write-Host "`nUsing sourceId = $sourceId for critical demo" -ForegroundColor Green
 
 Write-Host "`n[3] POST /api/logs (CRITICAL demo)" -ForegroundColor Yellow
 $criticalLog = Post-Json -Url "$baseUrl/api/logs" -Body @{
@@ -111,4 +111,6 @@ $filterUrl = "$baseUrl/api/logs/company/$($companyId)?start=$($startEncoded)&end
 $filteredLogs = Get-Json -Url $filterUrl
 $filteredLogs | Format-Table -AutoSize | Out-String | Write-Host
 
-Write-Host "`n=== DEMO COMPLETADA ===" -ForegroundColor Cyan
+Write-Host "`n=== DEMO COMPLETED ===" -ForegroundColor Cyan
+
+

@@ -14,7 +14,7 @@ export function useAlertsViewModel() {
       const data = await alertService.getAll()
       setAlerts(data)
     } catch (err) {
-      setError('Error carregant alertes')
+      setError('Failed to load alerts')
       console.error(err)
     } finally {
       setLoading(false)
@@ -26,7 +26,7 @@ export function useAlertsViewModel() {
       await alertService.closeAlert(alertId)
       await loadAlerts()
     } catch (err) {
-      setError('No s’ha pogut tancar l’alerta')
+      setError('Failed to close alert')
       console.error(err)
     }
   }

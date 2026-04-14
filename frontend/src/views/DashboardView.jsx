@@ -34,12 +34,12 @@ export default function DashboardView() {
           value={vm.alertStatusFilter}
           onChange={(e) => vm.setAlertStatusFilter(e.target.value)}
         >
-          <option value="ALL">Totes les alertes</option>
-          <option value="OPEN">Només obertes</option>
-          <option value="CLOSED">Només tancades</option>
+          <option value="ALL">All alerts</option>
+          <option value="OPEN">Open only</option>
+          <option value="CLOSED">Closed only</option>
         </select>
 
-        <button onClick={vm.reload}>Refrescar</button>
+        <button onClick={vm.reload}>Refresh</button>
       </div>
 
       {vm.isAllCompaniesSelected && (
@@ -52,13 +52,13 @@ export default function DashboardView() {
           }}
         >
           <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '10px' }}>
-            <strong>Filtre empreses afectades</strong>
+            <strong>Affected Companies Filter</strong>
             <select
               value={vm.affectedCompaniesFilterMode}
               onChange={(e) => vm.setAffectedCompaniesFilterMode(e.target.value)}
             >
-              <option value="ALL_ALERTS">Mostrar totes les alertes</option>
-              <option value="SELECT_COMPANIES">Filtrar per empreses seleccionades</option>
+              <option value="ALL_ALERTS">Show all alerts</option>
+              <option value="SELECT_COMPANIES">Filter by selected companies</option>
             </select>
 
             {vm.affectedCompaniesFilterMode === 'SELECT_COMPANIES' && (
@@ -67,10 +67,10 @@ export default function DashboardView() {
                 onChange={(e) => vm.setAffectedAlertsViewMode(e.target.value)}
               >
                 <option value="ANY_SELECTED">
-                  Veure totes les alertes de les empreses seleccionades
+                  Show all alerts for selected companies
                 </option>
                 <option value="COMMON_SELECTED">
-                  Veure només alertes comunes a totes les empreses seleccionades
+                  Show only alerts shared by all selected companies
                 </option>
               </select>
             )}
@@ -122,10 +122,10 @@ export default function DashboardView() {
             marginBottom: '24px'
           }}
         >
-          <StatCard title="Logs totals" value={vm.summary.totalLogs ?? 0} />
-          <StatCard title="Alertes totals" value={vm.summary.totalAlerts ?? 0} />
-          <StatCard title="Alertes obertes" value={vm.summary.openAlerts ?? 0} />
-          <StatCard title="Logs crítics" value={vm.summary.criticalLogs ?? 0} />
+          <StatCard title="Total Logs" value={vm.summary.totalLogs ?? 0} />
+          <StatCard title="Total Alerts" value={vm.summary.totalAlerts ?? 0} />
+          <StatCard title="Open Alerts" value={vm.summary.openAlerts ?? 0} />
+          <StatCard title="Critical Logs" value={vm.summary.criticalLogs ?? 0} />
         </div>
       )}
 
@@ -138,18 +138,18 @@ export default function DashboardView() {
       </div>
 
       <div className="card" style={{ marginBottom: '24px' }}>
-        <h3 style={{ marginBottom: '12px' }}>Detall de logs</h3>
+        <h3 style={{ marginBottom: '12px' }}>Log Details</h3>
 
         <div className="logs-filters-grid">
           <select value={vm.logLevelFilter} onChange={(e) => vm.setLogLevelFilter(e.target.value)}>
-            <option value="ALL">Nivell: tots</option>
+            <option value="ALL">Level: all</option>
             <option value="INFO">INFO</option>
             <option value="WARNING">WARNING</option>
             <option value="CRITICAL">CRITICAL</option>
           </select>
 
           <select value={vm.logSourceFilter} onChange={(e) => vm.setLogSourceFilter(e.target.value)}>
-            <option value="ALL">Origen: tots</option>
+            <option value="ALL">Source: all</option>
             {vm.availableLogSources.map((sourceName) => (
               <option key={sourceName} value={sourceName}>
                 {sourceName}
@@ -161,7 +161,7 @@ export default function DashboardView() {
             value={vm.logSourceTypeFilter}
             onChange={(e) => vm.setLogSourceTypeFilter(e.target.value)}
           >
-            <option value="ALL">Tipus origen: tots</option>
+            <option value="ALL">Source type: all</option>
             {vm.availableLogSourceTypes.map((sourceType) => (
               <option key={sourceType} value={sourceType}>
                 {sourceType}
@@ -173,9 +173,9 @@ export default function DashboardView() {
             value={vm.logAlertLinkFilter}
             onChange={(e) => vm.setLogAlertLinkFilter(e.target.value)}
           >
-            <option value="ALL">Alerta asociada: todos</option>
-            <option value="WITH_ASSOCIATED_ALERT">Solo con alerta asociada</option>
-            <option value="WITHOUT_ASSOCIATED_ALERT">Solo sin alerta asociada</option>
+            <option value="ALL">Linked alert: all</option>
+            <option value="WITH_ASSOCIATED_ALERT">Only with linked alert</option>
+            <option value="WITHOUT_ASSOCIATED_ALERT">Only without linked alert</option>
           </select>
 
           <div style={{ display: 'flex', gap: '6px' }}>
@@ -183,7 +183,7 @@ export default function DashboardView() {
               value={vm.logHourStartFilter}
               onChange={(e) => vm.setLogHourStartFilter(e.target.value)}
             >
-              <option value="ALL">Hora inicio</option>
+              <option value="ALL">Start hour</option>
               {hourOptions.map((hour) => (
                 <option key={`start-${hour}`} value={hour}>
                   {hour.padStart(2, '0')}:00
@@ -191,7 +191,7 @@ export default function DashboardView() {
               ))}
             </select>
             <select value={vm.logHourEndFilter} onChange={(e) => vm.setLogHourEndFilter(e.target.value)}>
-              <option value="ALL">Hora fin</option>
+              <option value="ALL">End hour</option>
               {hourOptions.map((hour) => (
                 <option key={`end-${hour}`} value={hour}>
                   {hour.padStart(2, '0')}:59
@@ -202,21 +202,21 @@ export default function DashboardView() {
 
           <input
             type="text"
-            placeholder="Filtrar per IP..."
+            placeholder="Filter by IP..."
             value={vm.logIpFilter}
             onChange={(e) => vm.setLogIpFilter(e.target.value)}
           />
 
           <input
             type="text"
-            placeholder="Cercar text en logs..."
+            placeholder="Search text in logs..."
             value={vm.logSearchFilter}
             onChange={(e) => vm.setLogSearchFilter(e.target.value)}
           />
         </div>
 
         <p style={{ marginTop: '10px', marginBottom: '10px' }}>
-          Mostrant <strong>{vm.filteredLogs.length}</strong> logs
+          Showing <strong>{vm.filteredLogs.length}</strong> logs
         </p>
 
         <div className="dashboard-logs-scroll-container">
@@ -225,9 +225,9 @@ export default function DashboardView() {
       </div>
 
       <h2>
-        {vm.alertStatusFilter === 'ALL' && 'Totes les alertes'}
-        {vm.alertStatusFilter === 'OPEN' && 'Alertes obertes'}
-        {vm.alertStatusFilter === 'CLOSED' && 'Alertes tancades'}
+        {vm.alertStatusFilter === 'ALL' && 'All alerts'}
+        {vm.alertStatusFilter === 'OPEN' && 'Open Alerts'}
+        {vm.alertStatusFilter === 'CLOSED' && 'Closed Alerts'}
       </h2>
 
       <div className="dashboard-alerts-scroll-container">
@@ -236,3 +236,4 @@ export default function DashboardView() {
     </div>
   )
 }
+

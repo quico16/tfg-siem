@@ -68,11 +68,11 @@ function Create-Log {
     }
 }
 
-$company = Ensure-Company -Name "Empresa Demo 3"
+$company = Ensure-Company -Name "Demo Company 3"
 $companyId = [long]$company.id
-Write-Host "Empresa objetivo: $($company.name) (ID: $companyId)" -ForegroundColor Green
+Write-Host "Target company: $($company.name) (ID: $companyId)" -ForegroundColor Green
 
-$firewall = Ensure-Source -CompanyId $companyId -Name "Firewall Principal" -Type "FIREWALL"
+$firewall = Ensure-Source -CompanyId $companyId -Name "Main Firewall" -Type "FIREWALL"
 $edr = Ensure-Source -CompanyId $companyId -Name "EDR CrowdStrike" -Type "EDR"
 $mail = Ensure-Source -CompanyId $companyId -Name "Mail Gateway" -Type "MAIL"
 
@@ -89,11 +89,12 @@ $created = @()
 foreach ($log in $logs) {
     $createdLog = Create-Log -Timestamp $log.ts -CompanyId $companyId -SourceId ([long]$log.src) -Level $log.lvl -Message $log.msg -Ip $log.ip -EventName $log.evt
     $created += $createdLog
-    Write-Host "Log creat -> ID: $($createdLog.id) | Level: $($createdLog.level) | Missatge: $($createdLog.message)" -ForegroundColor Yellow
+    Write-Host "Log created -> ID: $($createdLog.id) | Level: $($createdLog.level) | Message: $($createdLog.message)" -ForegroundColor Yellow
 }
 
 $alerts = Invoke-ApiGet -Url "$baseUrl/api/alerts/company/$companyId"
-Write-Host "Total logs creats en aquesta execucio: $($created.Count)" -ForegroundColor Green
-Write-Host "Alertes totals de l'empresa: $($alerts.Count)" -ForegroundColor Green
+Write-Host "Total logs created in this run: $($created.Count)" -ForegroundColor Green
+Write-Host "Total company alerts: $($alerts.Count)" -ForegroundColor Green
 
-Write-Host "=== FI SEED THIRD COMPANY ===" -ForegroundColor Cyan
+Write-Host "=== END SEED THIRD COMPANY ===" -ForegroundColor Cyan
+

@@ -1,76 +1,85 @@
-# Documentacio de branca: feature/dashboard_view_different_companies
+# Branch Notes: feature/dashboard_view_different_companies
 
-## Objectiu funcional
-Permetre una vista de dashboard multiempresa amb dues necessitats clau:
+## Functional Goal
 
-- veure alertes agregades (tot el que passa a l'ambit seleccionat)
-- poder filtrar per empreses afectades i distingir quan una alerta es compartida entre empreses
+Enable a multi-company dashboard view with two key capabilities:
 
-## Decisio de disseny final
+- See aggregated alerts across the selected scope
+- Filter by affected companies and identify alerts shared across multiple companies
 
-### Selector d'empreses
-- Seleccio unica al capdamunt:
-  - `Totes les empreses`
-  - cadascuna de les empreses disponibles
-- Es va eliminar el model de multiseleccio directa al selector principal per simplificar UX.
+## Final Design Decision
 
-### Bloc de filtre d'empreses afectades (nomes en mode `Totes les empreses`)
-S'afegeix un recuadre amb dos nivells:
+### Company selector
 
-1. Mode de filtre:
-- `Mostrar totes les alertes` (default)
-- `Filtrar per empreses seleccionades`
+- Single selection at the top:
+  - `All Companies`
+  - Each available company
+- Direct multi-select on the main selector was removed to simplify UX.
 
-2. Mode de visualitzacio (quan hi ha filtre per empreses):
-- `Veure totes les alertes de les empreses seleccionades`
-- `Veure nomes alertes comunes a totes les empreses seleccionades`
+### Affected companies filter block (only in `All Companies` mode)
 
-Quan es tria mode comu, la llista mostra nomes alertes que apareixen en totes les empreses marcades.
+A dedicated panel is shown with two levels:
 
-## Correlacio d'alertes compartides
-Per identificar si una alerta es la mateixa entre empreses:
+1. Filter mode:
+- `Show all alerts` (default)
+- `Filter by selected companies`
 
-- es normalitza el missatge (treient prefixos i variacions de format)
-- es construeix una clau de correlacio: `severitat + missatge normalitzat`
-- es calcula en quantes empreses apareix la clau
+2. View mode (when filtering by selected companies):
+- `Show all alerts for selected companies`
+- `Show only alerts shared by all selected companies`
 
-No s'ha afegit `correlation_key` a base de dades en aquesta iteracio; la correlacio es calcula al frontend amb les dades disponibles.
+In shared mode, only alerts that exist in all selected companies are displayed.
 
-## Millora visual aplicada
-A la taula d'alertes:
+## Shared Alert Correlation
 
-- `Fecha` es mostra a segons (sense milisegons)
-- s'afegeixen columnes:
-  - `Tipus`: `Compartida (X/Y)` o `Unica (X/Y)`
-  - `Empreses afectades`: llista de noms d'empreses on apareix el mateix patro
+To detect equivalent alerts across companies:
 
-Aixo substitueix la solucio anterior basada en `GRP-xxx`.
+- Normalize the alert message (remove prefixes and formatting variance)
+- Build a correlation key: `severity + normalized message`
+- Calculate how many companies contain that key
 
-## Comportament important en empresa unica
-Quan selecciones una sola empresa:
+No `correlation_key` database field was added in this iteration; correlation is computed in the frontend with available data.
 
-- la taula mostra les alertes d'aquella empresa
-- pero `Tipus` i `Empreses afectades` es calculen amb context global (totes les empreses), per no ocultar risc transversal
+## UI Improvements
 
-## Dades de prova creades
-S'han afegit scripts de seed per validar escenaris multiempresa:
+In the alerts table:
+
+- `Date` is displayed at seconds precision (without milliseconds)
+- New columns:
+  - `Type`: `Shared (X/Y)` or `Unique (X/Y)`
+  - `Affected Companies`: list of company names where the same pattern appears
+
+This replaces the previous `GRP-xxx` approach.
+
+## Important Behavior in Single-Company Mode
+
+When a single company is selected:
+
+- The table shows alerts from that company
+- `Type` and `Affected Companies` are still computed using global context (all companies), so cross-company risk is not hidden
+
+## Test Data Scripts
+
+New seed scripts were added for multi-company validation:
 
 - `seed-data-third-company.ps1`
-  - crea `Empresa Demo 3` amb fonts i logs
+  - Creates `Demo Company 3` with sources and logs
 
 - `seed-data-three-company-combinations.ps1`
-  - injecta combinacions de logs/alertes entre:
-    - Empresa Demo
-    - Empresa Demo 2
-    - Empresa Demo 3
-  - inclou casos compartits (2/3, 3/3) i unics
+  - Injects cross-company log/alert combinations among:
+    - `Demo Company`
+    - `Demo Company 2`
+    - `Demo Company 3`
+  - Includes shared and unique scenarios
 
-## Validacions executades durant la branca
+## Validations Executed During the Branch
+
 - `npm run lint` (frontend)
 - `npm run build` (frontend)
 - `mvn test` (backend)
-- execucio dels scripts de seed nous
+- Execution of new seed scripts
 
-## Notes tecniques
-- IDs de `Company`, `Log` i `Alert`: auto-generats per base de dades (`IDENTITY`)
-- no son random; acostumen a ser incrementals, pero poden tenir salts (rollback, errors, etc.)
+## Technical Notes
+
+- `Company`, `Log`, and `Alert` IDs are database-generated (`IDENTITY`)
+- IDs are usually incremental but may include gaps (rollback, failed transactions, etc.)
