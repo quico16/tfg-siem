@@ -20,18 +20,18 @@ function Get-Json {
     return Invoke-RestMethod -Uri $Url -Method Get
 }
 
-Write-Host "`n[1] Creando empresa..." -ForegroundColor Yellow
+Write-Host "`n[1] Creating company..." -ForegroundColor Yellow
 $companyResponse = Post-Json -Url "$baseUrl/api/companies" -Body @{
-    name = "Empresa Demo 2"
+    name = "Demo Company 2"
 }
 
 $companyId = $companyResponse.id
-Write-Host "Empresa creada con ID: $companyId" -ForegroundColor Green
+Write-Host "Company created with ID: $companyId" -ForegroundColor Green
 
-Write-Host "`n[2] Creando fuentes..." -ForegroundColor Yellow
+Write-Host "`n[2] Creating sources..." -ForegroundColor Yellow
 
 $firewallSource = Post-Json -Url "$baseUrl/api/sources" -Body @{
-    name = "Firewall Principal"
+    name = "Main Firewall"
     type = "FIREWALL"
     companyId = $companyId
 }
@@ -52,7 +52,7 @@ $firewallId = $firewallSource.id
 $edrId = $edrSource.id
 $mailId = $mailSource.id
 
-Write-Host "`n[3] Cargando logs de prueba..." -ForegroundColor Yellow
+Write-Host "`n[3] Loading sample logs..." -ForegroundColor Yellow
 
 $logs = @(
     @{ timestamp="2026-03-20T08:15:00"; companyId=$companyId; sourceId=$firewallId; level="INFO"; message="Normal HTTPS allowed"; ip="192.168.1.10"; rawLog='{"event":"https"}' },
@@ -81,14 +81,15 @@ $createdLogs = @()
 foreach ($log in $logs) {
     $response = Post-Json -Url "$baseUrl/api/logs" -Body $log
     $createdLogs += $response
-    Write-Host "Log creado -> ID: $($response.id) | Level: $($response.level)"
+    Write-Host "Log created -> ID: $($response.id) | Level: $($response.level)"
 }
 
-Write-Host "`n[4] Resumen final del seed"
-Write-Host "Total logs creados: $($createdLogs.Count)"
+Write-Host "`n[4] Final seed summary"
+Write-Host "Total created logs: $($createdLogs.Count)"
 
-Write-Host "`n[5] Consultando alertas..."
+Write-Host "`n[5] Fetching alerts..."
 $alerts = Get-Json -Url "$baseUrl/api/alerts/company/$companyId"
-Write-Host "Total alertas: $($alerts.Count)"
+Write-Host "Total alerts: $($alerts.Count)"
 
-Write-Host "`n=== SEED COMPLETADO ==="
+Write-Host "`n=== SEED COMPLETED ==="
+

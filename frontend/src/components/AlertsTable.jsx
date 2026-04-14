@@ -10,14 +10,14 @@ export default function AlertsTable({ alerts, onCloseAlert }) {
       <thead>
         <tr>
           <th>ID</th>
-          <th>Empresa</th>
-          <th>Tipus</th>
-          <th>Empreses afectades</th>
-          <th>Fecha</th>
-          <th>Nivell</th>
-          <th>Missatge</th>
-          <th>Estat</th>
-          <th>Acció</th>
+          <th>Company</th>
+          <th>Type</th>
+          <th>Affected Companies</th>
+          <th>Date</th>
+          <th>Level</th>
+          <th>Message</th>
+          <th>Status</th>
+          <th>Action</th>
         </tr>
       </thead>
       <tbody>
@@ -33,7 +33,7 @@ export default function AlertsTable({ alerts, onCloseAlert }) {
             <td>{alert.status}</td>
             <td>
               {alert.status === 'OPEN' ? (
-                <button onClick={() => onCloseAlert(alert.id)}>Tancar</button>
+                <button onClick={() => onCloseAlert(alert.id)}>Close</button>
               ) : (
                 <span>-</span>
               )}

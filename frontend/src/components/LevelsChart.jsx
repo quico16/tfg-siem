@@ -14,10 +14,10 @@ export default function LevelsChart({
 
   return (
     <div className="card">
-      <h3>Nivells de logs</h3>
+      <h3>Log Levels</h3>
 
       <div style={{ display: 'flex', gap: '8px', marginBottom: '16px', flexWrap: 'wrap' }}>
-        <button onClick={() => onLevelChange('ALL')}>Tots</button>
+        <button onClick={() => onLevelChange('ALL')}>All</button>
         <button onClick={() => onLevelChange('INFO')}>INFO</button>
         <button onClick={() => onLevelChange('WARNING')}>WARNING</button>
         <button onClick={() => onLevelChange('CRITICAL')}>CRITICAL</button>
@@ -25,19 +25,19 @@ export default function LevelsChart({
 
       {selectedLevel === 'ALL' ? (
         <p style={{ marginBottom: '12px' }}>
-          Total logs comptats: <strong>{totalCount}</strong>
+          Total counted logs: <strong>{totalCount}</strong>
         </p>
       ) : (
         <p style={{ marginBottom: '12px' }}>
-          Filtre actiu: <strong>{selectedLevel}</strong>
+          Active filter: <strong>{selectedLevel}</strong>
         </p>
       )}
 
       <table>
         <thead>
           <tr>
-            <th>Nivell</th>
-            <th>Quantitat</th>
+            <th>Level</th>
+            <th>Count</th>
           </tr>
         </thead>
         <tbody>
