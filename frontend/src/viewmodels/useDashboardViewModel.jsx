@@ -2,6 +2,7 @@ import { useEffect, useState, useCallback, useMemo } from 'react'
 import { companyService } from '../services/companyService'
 import { dashboardService } from '../services/dashboardService'
 import { alertService } from '../services/alertService'
+import { logService } from '../services/logService'
 
 function getDefaultDateRange() {
   const end = new Date()
@@ -26,11 +27,25 @@ function buildCorrelationKey(alert) {
   return `${alert.severity}|${normalizeAlertMessage(alert.message)}`
 }
 
+function getHourFromTimestamp(timestamp) {
+  if (!timestamp) {
+    return null
+  }
+
+  const date = new Date(timestamp)
+  if (Number.isNaN(date.getTime())) {
+    return null
+  }
+
+  return date.getHours()
+}
+
 export function useDashboardViewModel() {
   const [companies, setCompanies] = useState([])
   const [selectedCompanyId, setSelectedCompanyId] = useState('')
   const [summary, setSummary] = useState(null)
   const [levels, setLevels] = useState([])
+  const [logs, setLogs] = useState([])
   const [alerts, setAlerts] = useState([])
   const [alertsForCorrelation, setAlertsForCorrelation] = useState([])
   const [selectedAffectedCompanyIds, setSelectedAffectedCompanyIds] = useState([])
@@ -41,6 +56,14 @@ export function useDashboardViewModel() {
 
   const [alertStatusFilter, setAlertStatusFilter] = useState('ALL')
   const [levelFilter, setLevelFilter] = useState('ALL')
+  const [logLevelFilter, setLogLevelFilter] = useState('ALL')
+  const [logSourceFilter, setLogSourceFilter] = useState('ALL')
+  const [logSourceTypeFilter, setLogSourceTypeFilter] = useState('ALL')
+  const [logIpFilter, setLogIpFilter] = useState('')
+  const [logSearchFilter, setLogSearchFilter] = useState('')
+  const [logAlertLinkFilter, setLogAlertLinkFilter] = useState('ALL')
+  const [logHourStartFilter, setLogHourStartFilter] = useState('ALL')
+  const [logHourEndFilter, setLogHourEndFilter] = useState('ALL')
 
   const defaults = getDefaultDateRange()
   const [startDate, setStartDate] = useState(defaults.startDate)
@@ -78,6 +101,7 @@ export function useDashboardViewModel() {
     if (selectedCompanyIds.length === 0) {
       setSummary(null)
       setLevels([])
+      setLogs([])
       setAlerts([])
       setAlertsForCorrelation([])
       return
@@ -89,16 +113,18 @@ export function useDashboardViewModel() {
     try {
       const resultsByCompany = await Promise.all(
         selectedCompanyIds.map(async (companyId) => {
-          const [summaryData, levelsData, alertsData] = await Promise.all([
+          const [summaryData, levelsData, alertsData, logsData] = await Promise.all([
             dashboardService.getSummary(companyId),
             dashboardService.getLevels(companyId),
-            alertService.getAll(companyId)
+            alertService.getAll(companyId),
+            logService.getAll(companyId, startDate, endDate)
           ])
 
           return {
             summaryData,
             levelsData,
-            alertsData
+            alertsData,
+            logsData
           }
         })
       )
@@ -131,6 +157,9 @@ export function useDashboardViewModel() {
       const mergedAlerts = resultsByCompany
         .flatMap(({ alertsData }) => alertsData ?? [])
         .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
+      const mergedLogs = resultsByCompany
+        .flatMap(({ logsData }) => logsData ?? [])
+        .sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime())
 
       const allCompanyIds = companies.map((company) => String(company.id))
       let correlationAlerts = mergedAlerts
@@ -149,6 +178,7 @@ export function useDashboardViewModel() {
 
       setSummary(mergedSummary)
       setLevels(mergedLevels)
+      setLogs(mergedLogs)
       setAlerts(mergedAlerts)
       setAlertsForCorrelation(correlationAlerts)
     } catch (err) {
@@ -157,7 +187,7 @@ export function useDashboardViewModel() {
     } finally {
       setLoading(false)
     }
-  }, [selectedCompanyIds, companies, isAllCompaniesSelected])
+  }, [selectedCompanyIds, companies, isAllCompaniesSelected, startDate, endDate])
 
   const closeAlert = async (alertId) => {
     try {
@@ -269,6 +299,124 @@ export function useDashboardViewModel() {
     selectedCompanyIds
   ])
 
+  const availableLogSources = useMemo(() => {
+    const values = new Set()
+    logs.forEach((log) => {
+      if (log.sourceName) {
+        values.add(log.sourceName)
+      }
+    })
+    return Array.from(values).sort((a, b) => a.localeCompare(b))
+  }, [logs])
+
+  const availableLogSourceTypes = useMemo(() => {
+    const values = new Set()
+    logs.forEach((log) => {
+      if (log.sourceType) {
+        values.add(log.sourceType)
+      }
+    })
+    return Array.from(values).sort((a, b) => a.localeCompare(b))
+  }, [logs])
+
+  const alertsByLogId = useMemo(() => {
+    const ids = new Set()
+    alerts.forEach((alert) => {
+      if (alert.logId != null) {
+        ids.add(String(alert.logId))
+      }
+    })
+    return ids
+  }, [alerts])
+
+  const logsWithDerivedFields = useMemo(
+    () =>
+      logs.map((log) => ({
+        ...log,
+        hasAssociatedAlert: alertsByLogId.has(String(log.id))
+      })),
+    [logs, alertsByLogId]
+  )
+
+  const filteredLogs = useMemo(() => {
+    const normalizedSearch = logSearchFilter.trim().toLowerCase()
+    const normalizedIp = logIpFilter.trim().toLowerCase()
+    const startHour = logHourStartFilter === 'ALL' ? null : Number(logHourStartFilter)
+    const endHour = logHourEndFilter === 'ALL' ? null : Number(logHourEndFilter)
+
+    return logsWithDerivedFields.filter((log) => {
+      if (logLevelFilter !== 'ALL' && log.level !== logLevelFilter) {
+        return false
+      }
+
+      if (logSourceFilter !== 'ALL' && log.sourceName !== logSourceFilter) {
+        return false
+      }
+
+      if (logSourceTypeFilter !== 'ALL' && log.sourceType !== logSourceTypeFilter) {
+        return false
+      }
+
+      if (logAlertLinkFilter === 'WITH_ASSOCIATED_ALERT' && !log.hasAssociatedAlert) {
+        return false
+      }
+
+      if (logAlertLinkFilter === 'WITHOUT_ASSOCIATED_ALERT' && log.hasAssociatedAlert) {
+        return false
+      }
+
+      if (startHour != null && endHour != null) {
+        const logHour = getHourFromTimestamp(log.timestamp)
+        if (logHour == null) {
+          return false
+        }
+
+        const isSameDayRange = startHour <= endHour
+        const isWithinRange = isSameDayRange
+          ? logHour >= startHour && logHour <= endHour
+          : logHour >= startHour || logHour <= endHour
+
+        if (!isWithinRange) {
+          return false
+        }
+      }
+
+      if (normalizedIp.length > 0 && !String(log.ip ?? '').toLowerCase().includes(normalizedIp)) {
+        return false
+      }
+
+      if (normalizedSearch.length > 0) {
+        const searchableText = [
+          log.message,
+          log.sourceName,
+          log.sourceType,
+          log.companyName,
+          log.level,
+          log.ip
+        ]
+          .filter(Boolean)
+          .join(' ')
+          .toLowerCase()
+
+        if (!searchableText.includes(normalizedSearch)) {
+          return false
+        }
+      }
+
+      return true
+    })
+  }, [
+    logsWithDerivedFields,
+    logLevelFilter,
+    logSourceFilter,
+    logSourceTypeFilter,
+    logIpFilter,
+    logSearchFilter,
+    logAlertLinkFilter,
+    logHourStartFilter,
+    logHourEndFilter
+  ])
+
   useEffect(() => {
     if (!isAllCompaniesSelected) {
       setSelectedAffectedCompanyIds([])
@@ -302,9 +450,13 @@ export function useDashboardViewModel() {
     setEndDate,
     summary,
     levels,
+    logs,
     alerts,
     availableAlertCompanies,
     filteredAlerts,
+    availableLogSources,
+    availableLogSourceTypes,
+    filteredLogs,
     loading,
     error,
     reload: loadDashboardData,
@@ -318,6 +470,22 @@ export function useDashboardViewModel() {
     affectedAlertsViewMode,
     setAffectedAlertsViewMode,
     levelFilter,
-    setLevelFilter
+    setLevelFilter,
+    logLevelFilter,
+    setLogLevelFilter,
+    logSourceFilter,
+    setLogSourceFilter,
+    logSourceTypeFilter,
+    setLogSourceTypeFilter,
+    logIpFilter,
+    setLogIpFilter,
+    logSearchFilter,
+    setLogSearchFilter,
+    logAlertLinkFilter,
+    setLogAlertLinkFilter,
+    logHourStartFilter,
+    setLogHourStartFilter,
+    logHourEndFilter,
+    setLogHourEndFilter
   }
 }
