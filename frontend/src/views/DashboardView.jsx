@@ -6,6 +6,7 @@ import AlertsTable from '../components/AlertsTable'
 import ErrorMessage from '../components/ErrorMessage'
 import LoadingSpinner from '../components/LoadingSpinner'
 import LevelsChart from '../components/LevelsChart'
+import LogsTable from '../components/LogsTable'
 
 export default function DashboardView() {
   const vm = useDashboardViewModel()
@@ -133,6 +134,68 @@ export default function DashboardView() {
           selectedLevel={vm.levelFilter}
           onLevelChange={vm.setLevelFilter}
         />
+      </div>
+
+      <div className="card" style={{ marginBottom: '24px' }}>
+        <h3 style={{ marginBottom: '12px' }}>Detall de logs</h3>
+
+        <div className="logs-filters-grid">
+          <select value={vm.logLevelFilter} onChange={(e) => vm.setLogLevelFilter(e.target.value)}>
+            <option value="ALL">Nivell: tots</option>
+            <option value="INFO">INFO</option>
+            <option value="WARNING">WARNING</option>
+            <option value="CRITICAL">CRITICAL</option>
+          </select>
+
+          <select value={vm.logSourceFilter} onChange={(e) => vm.setLogSourceFilter(e.target.value)}>
+            <option value="ALL">Origen: tots</option>
+            {vm.availableLogSources.map((sourceName) => (
+              <option key={sourceName} value={sourceName}>
+                {sourceName}
+              </option>
+            ))}
+          </select>
+
+          <select
+            value={vm.logSourceTypeFilter}
+            onChange={(e) => vm.setLogSourceTypeFilter(e.target.value)}
+          >
+            <option value="ALL">Tipus origen: tots</option>
+            {vm.availableLogSourceTypes.map((sourceType) => (
+              <option key={sourceType} value={sourceType}>
+                {sourceType}
+              </option>
+            ))}
+          </select>
+
+          <select value={vm.logRawFilter} onChange={(e) => vm.setLogRawFilter(e.target.value)}>
+            <option value="ALL">Raw: tots</option>
+            <option value="WITH_RAW">Nomes amb raw</option>
+            <option value="WITHOUT_RAW">Nomes sense raw</option>
+          </select>
+
+          <input
+            type="text"
+            placeholder="Filtrar per IP..."
+            value={vm.logIpFilter}
+            onChange={(e) => vm.setLogIpFilter(e.target.value)}
+          />
+
+          <input
+            type="text"
+            placeholder="Cercar text en logs..."
+            value={vm.logSearchFilter}
+            onChange={(e) => vm.setLogSearchFilter(e.target.value)}
+          />
+        </div>
+
+        <p style={{ marginTop: '10px', marginBottom: '10px' }}>
+          Mostrant <strong>{vm.filteredLogs.length}</strong> logs
+        </p>
+
+        <div className="dashboard-logs-scroll-container">
+          <LogsTable logs={vm.filteredLogs} />
+        </div>
       </div>
 
       <h2>

@@ -39,10 +39,29 @@ table {
   overflow-y: auto;
 }
 
+.dashboard-logs-scroll-container {
+  max-height: 460px;
+  overflow-y: auto;
+}
+
+.logs-filters-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 10px;
+}
+
+.log-raw-pre {
+  max-width: 360px;
+  overflow-x: auto;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
 th, td {
   border: 1px solid #ddd;
   padding: 10px;
   text-align: left;
+  vertical-align: top;
 }
 
 .card {
