@@ -169,12 +169,6 @@ export default function DashboardView() {
             ))}
           </select>
 
-          <select value={vm.logRawFilter} onChange={(e) => vm.setLogRawFilter(e.target.value)}>
-            <option value="ALL">Raw: tots</option>
-            <option value="WITH_RAW">Nomes amb raw</option>
-            <option value="WITHOUT_RAW">Nomes sense raw</option>
-          </select>
-
           <select
             value={vm.logAlertLinkFilter}
             onChange={(e) => vm.setLogAlertLinkFilter(e.target.value)}
@@ -182,15 +176,6 @@ export default function DashboardView() {
             <option value="ALL">Alerta asociada: todos</option>
             <option value="WITH_ASSOCIATED_ALERT">Solo con alerta asociada</option>
             <option value="WITHOUT_ASSOCIATED_ALERT">Solo sin alerta asociada</option>
-          </select>
-
-          <select value={vm.logCountryFilter} onChange={(e) => vm.setLogCountryFilter(e.target.value)}>
-            <option value="ALL">Pais IP: todos</option>
-            {vm.availableLogCountries.map((country) => (
-              <option key={country} value={country}>
-                {country}
-              </option>
-            ))}
           </select>
 
           <div style={{ display: 'flex', gap: '6px' }}>
