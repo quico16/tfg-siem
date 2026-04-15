@@ -6,8 +6,8 @@ export const alertService = {
     return response.data
   },
 
-  async closeAlert(alertId) {
-    const response = await api.patch(`/alerts/${alertId}/close`)
+  async closeAlert(alertId, payload) {
+    const response = await api.patch(`/alerts/${alertId}/close`, payload || {})
     return response.data
   },
 

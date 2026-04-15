@@ -11,6 +11,8 @@ const workflowStatuses = [
   'CLOSED'
 ]
 
+const resolutionTypes = ['TRUE_POSITIVE', 'FALSE_POSITIVE', 'BENIGN']
+
 function toLower(value) {
   return String(value ?? '').toLowerCase()
 }
@@ -24,6 +26,7 @@ export default function AlertsTable({
 }) {
   const [selectedAlert, setSelectedAlert] = useState(null)
   const [draftById, setDraftById] = useState({})
+  const [closeDrafts, setCloseDrafts] = useState({})
 
   const formatDateToSeconds = (value) => {
     const text = String(value ?? '')
@@ -34,7 +37,7 @@ export default function AlertsTable({
   const safeAlerts = useMemo(() => (Array.isArray(alerts) ? alerts : []), [alerts])
   const safeLogs = useMemo(() => (Array.isArray(logs) ? logs : []), [logs])
 
-  const getDraft = (alert) => {
+  const getWorkflowDraft = (alert) => {
     const existing = draftById[alert.id]
     if (existing) {
       return existing
@@ -43,6 +46,18 @@ export default function AlertsTable({
     return {
       status: alert.status ?? 'OPEN',
       owner: alert.owner ?? ''
+    }
+  }
+
+  const getCloseDraft = (alert) => {
+    const existing = closeDrafts[alert.id]
+    if (existing) {
+      return existing
+    }
+
+    return {
+      resolutionType: alert.resolutionType ?? 'TRUE_POSITIVE',
+      resolutionNote: alert.resolutionNote ?? ''
     }
   }
 
@@ -115,12 +130,14 @@ export default function AlertsTable({
             <th>Message</th>
             <th>Status</th>
             <th>Owner</th>
+            <th>Resolution</th>
             <th>Action</th>
           </tr>
         </thead>
         <tbody>
           {safeAlerts.map((alert) => {
-            const draft = getDraft(alert)
+            const workflowDraft = getWorkflowDraft(alert)
+            const closeDraft = getCloseDraft(alert)
 
             return (
               <tr key={alert.id}>
@@ -142,13 +159,13 @@ export default function AlertsTable({
                 </td>
                 <td>
                   <select
-                    value={draft.status}
+                    value={workflowDraft.status}
                     onChange={(event) => {
                       const nextValue = event.target.value
                       setDraftById((current) => ({
                         ...current,
                         [alert.id]: {
-                          ...draft,
+                          ...workflowDraft,
                           status: nextValue
                         }
                       }))
@@ -164,14 +181,14 @@ export default function AlertsTable({
                 <td>
                   <input
                     type="text"
-                    value={draft.owner}
+                    value={workflowDraft.owner}
                     placeholder="Assign owner"
                     onChange={(event) => {
                       const nextValue = event.target.value
                       setDraftById((current) => ({
                         ...current,
                         [alert.id]: {
-                          ...draft,
+                          ...workflowDraft,
                           owner: nextValue
                         }
                       }))
@@ -179,13 +196,60 @@ export default function AlertsTable({
                   />
                 </td>
                 <td>
+                  <div style={{ display: 'grid', gap: '6px' }}>
+                    <select
+                      value={closeDraft.resolutionType}
+                      onChange={(event) =>
+                        setCloseDrafts((current) => ({
+                          ...current,
+                          [alert.id]: {
+                            ...closeDraft,
+                            resolutionType: event.target.value
+                          }
+                        }))
+                      }
+                    >
+                      {resolutionTypes.map((type) => (
+                        <option key={type} value={type}>
+                          {type}
+                        </option>
+                      ))}
+                    </select>
+                    <input
+                      type="text"
+                      placeholder="Optional close note"
+                      value={closeDraft.resolutionNote}
+                      onChange={(event) =>
+                        setCloseDrafts((current) => ({
+                          ...current,
+                          [alert.id]: {
+                            ...closeDraft,
+                            resolutionNote: event.target.value
+                          }
+                        }))
+                      }
+                    />
+                  </div>
+                </td>
+                <td>
                   <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
                     <button onClick={() => setSelectedAlert(alert)}>Investigate</button>
-                    <button onClick={() => onUpdateWorkflow?.(alert.id, draft)}>Save workflow</button>
+                    <button onClick={() => onUpdateWorkflow?.(alert.id, workflowDraft)}>
+                      Save workflow
+                    </button>
                     {alert.status === 'OPEN' ? (
-                      <button onClick={() => onCloseAlert(alert.id)}>Quick close</button>
+                      <button
+                        onClick={() =>
+                          onCloseAlert?.(alert.id, {
+                            resolutionType: closeDraft.resolutionType,
+                            resolutionNote: closeDraft.resolutionNote
+                          })
+                        }
+                      >
+                        Close with classification
+                      </button>
                     ) : (
-                      <span>-</span>
+                      <span>{alert.resolutionType ?? '-'}</span>
                     )}
                   </div>
                 </td>

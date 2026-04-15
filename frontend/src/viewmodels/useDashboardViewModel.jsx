@@ -241,9 +241,9 @@ export function useDashboardViewModel() {
     }
   }, [selectedCompanyIds, companies, isAllCompaniesSelected, startDate, endDate])
 
-  const closeAlert = async (alertId) => {
+  const closeAlert = async (alertId, payload) => {
     try {
-      await alertService.closeAlert(alertId)
+      await alertService.closeAlert(alertId, payload)
       await loadDashboardData()
     } catch (err) {
       setError('Failed to close alert')

@@ -1,6 +1,7 @@
 package com.tfg.siem.controller;
 
 import com.tfg.siem.dto.AlertResponse;
+import com.tfg.siem.dto.CloseAlertRequest;
 import com.tfg.siem.dto.CrossCompanyAlertResponse;
 import com.tfg.siem.dto.UpdateAlertWorkflowRequest;
 import com.tfg.siem.service.AlertService;
@@ -43,8 +44,10 @@ public class AlertController {
     }
 
     @PatchMapping("/{alertId}/close")
-    public AlertResponse closeAlert(@PathVariable Long alertId) {
-        return alertService.closeAlert(alertId);
+    public AlertResponse closeAlert(
+            @PathVariable Long alertId,
+            @Valid @RequestBody(required = false) CloseAlertRequest request) {
+        return alertService.closeAlert(alertId, request);
     }
 
     @PatchMapping("/{alertId}/workflow")

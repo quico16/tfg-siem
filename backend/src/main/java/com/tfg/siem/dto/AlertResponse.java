@@ -1,6 +1,7 @@
 package com.tfg.siem.dto;
 
 import com.tfg.siem.model.AlertStatus;
+import com.tfg.siem.model.AlertResolutionType;
 import com.tfg.siem.model.LogLevel;
 
 import java.time.LocalDateTime;
@@ -19,6 +20,8 @@ public class AlertResponse {
     private AlertStatus status;
     private String owner;
     private LocalDateTime statusUpdatedAt;
+    private AlertResolutionType resolutionType;
+    private String resolutionNote;
     private LocalDateTime createdAt;
 
     public AlertResponse() {
@@ -76,6 +79,14 @@ public class AlertResponse {
         return statusUpdatedAt;
     }
 
+    public AlertResolutionType getResolutionType() {
+        return resolutionType;
+    }
+
+    public String getResolutionNote() {
+        return resolutionNote;
+    }
+
     public void setId(Long id) {
         this.id = id;
     }
@@ -122,6 +133,14 @@ public class AlertResponse {
 
     public void setStatusUpdatedAt(LocalDateTime statusUpdatedAt) {
         this.statusUpdatedAt = statusUpdatedAt;
+    }
+
+    public void setResolutionType(AlertResolutionType resolutionType) {
+        this.resolutionType = resolutionType;
+    }
+
+    public void setResolutionNote(String resolutionNote) {
+        this.resolutionNote = resolutionNote;
     }
 
     public void setCreatedAt(LocalDateTime createdAt) {
