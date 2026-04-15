@@ -361,6 +361,56 @@ export default function DashboardView() {
               Showing <strong>{vm.filteredAlerts.length}</strong> alerts
             </p>
 
+            <div className="card" style={{ marginBottom: '12px' }}>
+              <h3>Grouped Alerts (Dedup View)</h3>
+              <div className="dashboard-alerts-scroll-container">
+                <table className="sticky-header-table">
+                  <thead>
+                    <tr>
+                      <th>Correlation</th>
+                      <th>Severity</th>
+                      <th>Total</th>
+                      <th>Open</th>
+                      <th>Latest</th>
+                      <th>Action</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {vm.groupedAlerts.map((group) => (
+                      <tr key={group.key}>
+                        <td>{group.key}</td>
+                        <td>{group.severity}</td>
+                        <td>{group.total}</td>
+                        <td>{group.open}</td>
+                        <td>{String(group.latestCreatedAt ?? '').replace('T', ' ').split('.')[0]}</td>
+                        <td>
+                          <button
+                            disabled={group.open === 0}
+                            onClick={() => {
+                              const openIds = vm.filteredAlerts
+                                .filter(
+                                  (alert) => group.alertIds.includes(alert.id) && alert.status === 'OPEN'
+                                )
+                                .map((alert) => alert.id)
+
+                              vm.bulkCloseAlerts(openIds)
+                            }}
+                          >
+                            Close open in group
+                          </button>
+                        </td>
+                      </tr>
+                    ))}
+                    {vm.groupedAlerts.length === 0 && (
+                      <tr>
+                        <td colSpan={6}>No grouped alerts for current filters.</td>
+                      </tr>
+                    )}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+
             <div className="dashboard-alerts-scroll-container">
               <AlertsTable
                 alerts={vm.filteredAlerts || []}
