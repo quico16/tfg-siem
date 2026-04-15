@@ -22,7 +22,9 @@ export default function AlertsTable({
   logs,
   onCloseAlert,
   onUpdateWorkflow,
-  onPivotMessage
+  onPivotMessage,
+  selectedAlertIds = [],
+  onToggleAlertSelection
 }) {
   const [selectedAlert, setSelectedAlert] = useState(null)
   const [draftById, setDraftById] = useState({})
@@ -117,6 +119,7 @@ export default function AlertsTable({
       <table className="sticky-header-table">
         <thead>
           <tr>
+            <th>Select</th>
             <th>ID</th>
             <th>Company</th>
             <th>Type</th>
@@ -141,6 +144,13 @@ export default function AlertsTable({
 
             return (
               <tr key={alert.id}>
+                <td>
+                  <input
+                    type="checkbox"
+                    checked={selectedAlertIds.includes(alert.id)}
+                    onChange={() => onToggleAlertSelection?.(alert.id)}
+                  />
+                </td>
                 <td>{alert.id}</td>
                 <td>{alert.companyName ?? '-'}</td>
                 <td>{alert.sharedTypeLabel ?? '-'}</td>

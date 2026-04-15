@@ -16,6 +16,10 @@ export default function DashboardView() {
   const [showAlerts, setShowAlerts] = useState(false)
   const [presetNameInput, setPresetNameInput] = useState('')
   const [selectedPresetName, setSelectedPresetName] = useState('')
+  const [selectedAlertIdsForCase, setSelectedAlertIdsForCase] = useState([])
+  const [caseTitle, setCaseTitle] = useState('')
+  const [caseDescription, setCaseDescription] = useState('')
+  const [caseOwner, setCaseOwner] = useState('')
 
   return (
     <div style={{ padding: '24px' }}>
@@ -106,6 +110,91 @@ export default function DashboardView() {
           selectedLevel={vm.levelFilter}
           onLevelChange={vm.setLevelFilter}
         />
+      </div>
+
+      <div className="card" style={{ marginBottom: '24px' }}>
+        <h3>Case Management</h3>
+        <div style={{ display: 'grid', gap: '8px', marginBottom: '12px' }}>
+          <input
+            type="text"
+            placeholder="Case title"
+            value={caseTitle}
+            onChange={(event) => setCaseTitle(event.target.value)}
+          />
+          <input
+            type="text"
+            placeholder="Case owner"
+            value={caseOwner}
+            onChange={(event) => setCaseOwner(event.target.value)}
+          />
+          <textarea
+            placeholder="Case description"
+            value={caseDescription}
+            onChange={(event) => setCaseDescription(event.target.value)}
+          />
+          <p style={{ margin: 0 }}>
+            Selected alerts for case: <strong>{selectedAlertIdsForCase.length}</strong>
+          </p>
+          <button
+            disabled={!caseTitle.trim()}
+            onClick={async () => {
+              await vm.createCase({
+                title: caseTitle,
+                description: caseDescription,
+                owner: caseOwner,
+                alertIds: selectedAlertIdsForCase
+              })
+              setCaseTitle('')
+              setCaseDescription('')
+              setCaseOwner('')
+              setSelectedAlertIdsForCase([])
+            }}
+          >
+            Create case from selection
+          </button>
+        </div>
+        <div className="dashboard-alerts-scroll-container">
+          <table className="sticky-header-table">
+            <thead>
+              <tr>
+                <th>ID</th>
+                <th>Title</th>
+                <th>Owner</th>
+                <th>Status</th>
+                <th>Alerts</th>
+                <th>Updated</th>
+                <th>Action</th>
+              </tr>
+            </thead>
+            <tbody>
+              {(vm.cases || []).map((item) => (
+                <tr key={item.id}>
+                  <td>{item.id}</td>
+                  <td>{item.title}</td>
+                  <td>{item.owner ?? '-'}</td>
+                  <td>{item.status}</td>
+                  <td>{(item.alertIds || []).length}</td>
+                  <td>{String(item.updatedAt ?? '').replace('T', ' ').split('.')[0]}</td>
+                  <td>
+                    <select
+                      value={item.status}
+                      onChange={(event) => vm.updateCaseStatus(item.id, event.target.value)}
+                    >
+                      <option value="OPEN">OPEN</option>
+                      <option value="IN_PROGRESS">IN_PROGRESS</option>
+                      <option value="RESOLVED">RESOLVED</option>
+                    </select>
+                  </td>
+                </tr>
+              ))}
+              {(vm.cases || []).length === 0 && (
+                <tr>
+                  <td colSpan={7}>No cases created yet.</td>
+                </tr>
+              )}
+            </tbody>
+          </table>
+        </div>
       </div>
 
       <div className="card" style={{ marginBottom: '24px' }}>
@@ -418,6 +507,14 @@ export default function DashboardView() {
                 onCloseAlert={vm.closeAlert}
                 onUpdateWorkflow={vm.updateAlertWorkflow}
                 onPivotMessage={vm.pivotFromAlertMessage}
+                selectedAlertIds={selectedAlertIdsForCase}
+                onToggleAlertSelection={(alertId) => {
+                  setSelectedAlertIdsForCase((current) =>
+                    current.includes(alertId)
+                      ? current.filter((id) => id !== alertId)
+                      : [...current, alertId]
+                  )
+                }}
               />
             </div>
           </>
