@@ -444,6 +444,46 @@ export function useDashboardViewModel() {
     logHourEndFilter
   ])
 
+  const groupedAlerts = useMemo(() => {
+    const groups = new Map()
+
+    filteredAlerts.forEach((alert) => {
+      const key = alert.correlationKey || buildCorrelationKey(alert)
+      const current = groups.get(key) || {
+        key,
+        severity: alert.severity,
+        message: alert.message,
+        total: 0,
+        open: 0,
+        latestCreatedAt: alert.createdAt,
+        alertIds: []
+      }
+
+      current.total += 1
+      if (alert.status === 'OPEN') {
+        current.open += 1
+      }
+      if (new Date(alert.createdAt).getTime() > new Date(current.latestCreatedAt).getTime()) {
+        current.latestCreatedAt = alert.createdAt
+      }
+      current.alertIds.push(alert.id)
+
+      groups.set(key, current)
+    })
+
+    return Array.from(groups.values()).sort((a, b) => b.open - a.open || b.total - a.total)
+  }, [filteredAlerts])
+
+  const bulkCloseAlerts = async (alertIds) => {
+    try {
+      await Promise.all(alertIds.map((alertId) => alertService.closeAlert(alertId)))
+      await loadDashboardData()
+    } catch (err) {
+      setError('Failed to bulk close alerts')
+      console.error(err)
+    }
+  }
+
   useEffect(() => {
     if (!isAllCompaniesSelected) {
       setSelectedAffectedCompanyIds([])
@@ -484,10 +524,12 @@ export function useDashboardViewModel() {
     availableLogSources,
     availableLogSourceTypes,
     filteredLogs,
+    groupedAlerts,
     loading,
     error,
     reload: loadDashboardData,
     closeAlert,
+    bulkCloseAlerts,
     alertStatusFilter,
     setAlertStatusFilter,
     selectedAffectedCompanyIds,
