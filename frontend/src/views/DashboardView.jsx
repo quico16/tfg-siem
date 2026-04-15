@@ -315,6 +315,7 @@ export default function DashboardView() {
             <div className="dashboard-alerts-scroll-container">
               <AlertsTable
                 alerts={vm.filteredAlerts || []}
+                logs={vm.filteredLogs || []}
                 onCloseAlert={vm.closeAlert}
                 onUpdateWorkflow={vm.updateAlertWorkflow}
               />
