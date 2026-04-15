@@ -52,6 +52,13 @@ public class Alert {
     @Column(nullable = false, length = 20)
     private AlertStatus status;
 
+    @Enumerated(EnumType.STRING)
+    @Column(length = 30)
+    private AlertResolutionType resolutionType;
+
+    @Column(length = 500)
+    private String resolutionNote;
+
     @Column(nullable = false)
     private LocalDateTime createdAt;
 
@@ -100,6 +107,14 @@ public class Alert {
         return createdAt;
     }
 
+    public AlertResolutionType getResolutionType() {
+        return resolutionType;
+    }
+
+    public String getResolutionNote() {
+        return resolutionNote;
+    }
+
     public void setCompany(Company company) {
         this.company = company;
     }
@@ -130,5 +145,13 @@ public class Alert {
 
     public void setStatus(AlertStatus status) {
         this.status = status;
+    }
+
+    public void setResolutionType(AlertResolutionType resolutionType) {
+        this.resolutionType = resolutionType;
+    }
+
+    public void setResolutionNote(String resolutionNote) {
+        this.resolutionNote = resolutionNote == null ? null : resolutionNote.trim();
     }
 }

@@ -1,6 +1,7 @@
 package com.tfg.siem.service;
 
 import com.tfg.siem.dto.AlertResponse;
+import com.tfg.siem.dto.CloseAlertRequest;
 import com.tfg.siem.dto.CrossCompanyAlertResponse;
 import com.tfg.siem.exception.BadRequestException;
 import com.tfg.siem.exception.ResourceNotFoundException;
@@ -462,12 +463,14 @@ public class AlertService {
         response.setCorrelationKey(alert.getCorrelationKey());
         response.setMessage(alert.getMessage());
         response.setStatus(alert.getStatus());
+        response.setResolutionType(alert.getResolutionType());
+        response.setResolutionNote(alert.getResolutionNote());
         response.setCreatedAt(alert.getCreatedAt());
         return response;
     }
 
     @Transactional
-    public AlertResponse closeAlert(Long alertId) {
+    public AlertResponse closeAlert(Long alertId, CloseAlertRequest request) {
         Alert alert = alertRepository.findById(alertId)
                 .orElseThrow(() -> new ResourceNotFoundException("Alert not found with id: " + alertId));
 
@@ -476,6 +479,10 @@ public class AlertService {
         }
 
         alert.setStatus(AlertStatus.CLOSED);
+        if (request != null) {
+            alert.setResolutionType(request.getResolutionType());
+            alert.setResolutionNote(request.getResolutionNote());
+        }
         Alert savedAlert = alertRepository.save(alert);
 
         return mapToResponse(savedAlert);
