@@ -463,6 +463,7 @@ public class AlertService {
         response.setMessage(alert.getMessage());
         response.setStatus(alert.getStatus());
         response.setCreatedAt(alert.getCreatedAt());
+        response.setClosedAt(alert.getClosedAt());
         return response;
     }
 

@@ -55,6 +55,9 @@ public class Alert {
     @Column(nullable = false)
     private LocalDateTime createdAt;
 
+    @Column
+    private LocalDateTime closedAt;
+
     public Alert() {
         this.createdAt = LocalDateTime.now();
         this.status = AlertStatus.OPEN;
@@ -100,6 +103,10 @@ public class Alert {
         return createdAt;
     }
 
+    public LocalDateTime getClosedAt() {
+        return closedAt;
+    }
+
     public void setCompany(Company company) {
         this.company = company;
     }
@@ -130,5 +137,8 @@ public class Alert {
 
     public void setStatus(AlertStatus status) {
         this.status = status;
+        if (status == AlertStatus.CLOSED) {
+            this.closedAt = LocalDateTime.now();
+        }
     }
 }

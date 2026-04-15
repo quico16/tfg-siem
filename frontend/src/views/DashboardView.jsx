@@ -59,6 +59,32 @@ export default function DashboardView() {
         </div>
       )}
 
+      <div className="card" style={{ marginBottom: '24px' }}>
+        <h3>SOC Operational Metrics</h3>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, minmax(180px, 1fr))', gap: '10px' }}>
+          <div>
+            <strong>Backlog Open:</strong> {vm.socMetrics.backlogOpen}
+          </div>
+          <div>
+            <strong>Open Rate:</strong> {vm.socMetrics.openRate}%
+          </div>
+          <div>
+            <strong>Critical Open:</strong> {vm.socMetrics.criticalOpen}
+          </div>
+          <div>
+            <strong>MTTD:</strong>{' '}
+            {vm.socMetrics.mttdMinutes == null ? 'N/A' : `${vm.socMetrics.mttdMinutes} min`}
+          </div>
+          <div>
+            <strong>MTTR:</strong>{' '}
+            {vm.socMetrics.mttrMinutes == null ? 'N/A' : `${vm.socMetrics.mttrMinutes} min`}
+          </div>
+          <div>
+            <strong>Total Alerts:</strong> {vm.socMetrics.totalAlerts}
+          </div>
+        </div>
+      </div>
+
       <div style={{ marginBottom: '24px' }}>
         <LevelsChart
           levels={vm.levels || []}
