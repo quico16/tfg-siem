@@ -13,7 +13,7 @@ function formatDate(dateValue) {
   return date.toLocaleString()
 }
 
-export default function LogsTable({ logs }) {
+export default function LogsTable({ logs, onPivotIp, onPivotSource }) {
   const safeLogs = Array.isArray(logs) ? logs : []
   const [selectedRawLog, setSelectedRawLog] = useState(null)
 
@@ -42,11 +42,21 @@ export default function LogsTable({ logs }) {
             <tr key={log.id}>
               <td>{formatDate(log.timestamp)}</td>
               <td>{log.companyName ?? '-'}</td>
-              <td>{log.sourceName ?? '-'}</td>
+              <td>
+                {log.sourceName ? (
+                  <button onClick={() => onPivotSource?.(log.sourceName)}>
+                    {log.sourceName}
+                  </button>
+                ) : (
+                  '-'
+                )}
+              </td>
               <td>{log.sourceType ?? '-'}</td>
               <td>{log.level ?? '-'}</td>
               <td>{log.hasAssociatedAlert ? 'Yes' : 'No'}</td>
-              <td>{log.ip ?? '-'}</td>
+              <td>
+                {log.ip ? <button onClick={() => onPivotIp?.(log.ip)}>{log.ip}</button> : '-'}
+              </td>
               <td>{log.message ?? '-'}</td>
               <td>
                 {log.rawLog == null ? (

@@ -15,7 +15,13 @@ function toLower(value) {
   return String(value ?? '').toLowerCase()
 }
 
-export default function AlertsTable({ alerts, logs, onCloseAlert, onUpdateWorkflow }) {
+export default function AlertsTable({
+  alerts,
+  logs,
+  onCloseAlert,
+  onUpdateWorkflow,
+  onPivotMessage
+}) {
   const [selectedAlert, setSelectedAlert] = useState(null)
   const [draftById, setDraftById] = useState({})
 
@@ -128,7 +134,12 @@ export default function AlertsTable({ alerts, logs, onCloseAlert, onUpdateWorkfl
                 <td>{alert.ruleKey ?? '-'}</td>
                 <td>{alert.fingerprint ?? '-'}</td>
                 <td>{alert.correlationKey ?? '-'}</td>
-                <td>{alert.message}</td>
+                <td>
+                  <div style={{ display: 'flex', gap: '6px', alignItems: 'flex-start' }}>
+                    <span>{alert.message}</span>
+                    <button onClick={() => onPivotMessage?.(alert.message)}>Pivot</button>
+                  </div>
+                </td>
                 <td>
                   <select
                     value={draft.status}
