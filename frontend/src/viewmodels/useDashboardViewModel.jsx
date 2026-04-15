@@ -47,6 +47,25 @@ function getHourFromTimestamp(timestamp) {
   return date.getHours()
 }
 
+function getMinutesSince(dateValue) {
+  const date = new Date(dateValue)
+  if (Number.isNaN(date.getTime())) {
+    return 0
+  }
+
+  return Math.floor((Date.now() - date.getTime()) / 60000)
+}
+
+function getSlaMinutesBySeverity(severity) {
+  if (severity === 'CRITICAL') {
+    return 60
+  }
+  if (severity === 'WARNING') {
+    return 240
+  }
+  return 720
+}
+
 export function useDashboardViewModel() {
   const [companies, setCompanies] = useState([])
   const [selectedCompanyId, setSelectedCompanyId] = useState('')
@@ -444,6 +463,50 @@ export function useDashboardViewModel() {
     logHourEndFilter
   ])
 
+  const alertAgingSummary = useMemo(() => {
+    const openAlerts = filteredAlerts.filter((alert) => alert.status === 'OPEN')
+    const buckets = {
+      under1h: 0,
+      between1hAnd4h: 0,
+      over4h: 0
+    }
+
+    openAlerts.forEach((alert) => {
+      const ageMinutes = getMinutesSince(alert.createdAt)
+      if (ageMinutes < 60) {
+        buckets.under1h += 1
+      } else if (ageMinutes < 240) {
+        buckets.between1hAnd4h += 1
+      } else {
+        buckets.over4h += 1
+      }
+    })
+
+    return {
+      totalOpen: openAlerts.length,
+      ...buckets
+    }
+  }, [filteredAlerts])
+
+  const slaBreachedAlerts = useMemo(
+    () =>
+      filteredAlerts
+        .filter((alert) => alert.status === 'OPEN')
+        .map((alert) => {
+          const ageMinutes = getMinutesSince(alert.createdAt)
+          const slaMinutes = getSlaMinutesBySeverity(alert.severity)
+          return {
+            ...alert,
+            ageMinutes,
+            slaMinutes,
+            isBreached: ageMinutes > slaMinutes
+          }
+        })
+        .filter((alert) => alert.isBreached)
+        .sort((a, b) => b.ageMinutes - a.ageMinutes),
+    [filteredAlerts]
+  )
+
   useEffect(() => {
     if (!isAllCompaniesSelected) {
       setSelectedAffectedCompanyIds([])
@@ -484,6 +547,8 @@ export function useDashboardViewModel() {
     availableLogSources,
     availableLogSourceTypes,
     filteredLogs,
+    alertAgingSummary,
+    slaBreachedAlerts,
     loading,
     error,
     reload: loadDashboardData,

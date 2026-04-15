@@ -64,6 +64,47 @@ export default function DashboardView() {
       </div>
 
       <div className="card" style={{ marginBottom: '24px' }}>
+        <h3>SLA & Aging (Open Alerts)</h3>
+        <p style={{ marginTop: 0 }}>
+          Open: <strong>{vm.alertAgingSummary.totalOpen}</strong> | Under 1h:{' '}
+          <strong>{vm.alertAgingSummary.under1h}</strong> | 1h-4h:{' '}
+          <strong>{vm.alertAgingSummary.between1hAnd4h}</strong> | Over 4h:{' '}
+          <strong>{vm.alertAgingSummary.over4h}</strong>
+        </p>
+        <p style={{ marginTop: 0 }}>
+          SLA breached alerts: <strong>{vm.slaBreachedAlerts.length}</strong>
+        </p>
+        {vm.slaBreachedAlerts.length > 0 && (
+          <div className="dashboard-alerts-scroll-container">
+            <table className="sticky-header-table">
+              <thead>
+                <tr>
+                  <th>ID</th>
+                  <th>Company</th>
+                  <th>Severity</th>
+                  <th>Age (min)</th>
+                  <th>SLA (min)</th>
+                  <th>Message</th>
+                </tr>
+              </thead>
+              <tbody>
+                {vm.slaBreachedAlerts.slice(0, 30).map((alert) => (
+                  <tr key={`sla-${alert.id}`}>
+                    <td>{alert.id}</td>
+                    <td>{alert.companyName ?? '-'}</td>
+                    <td>{alert.severity}</td>
+                    <td>{alert.ageMinutes}</td>
+                    <td>{alert.slaMinutes}</td>
+                    <td>{alert.message}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </div>
+
+      <div className="card" style={{ marginBottom: '24px' }}>
         <div
           className="section-header-row section-fold-header"
           role="button"
