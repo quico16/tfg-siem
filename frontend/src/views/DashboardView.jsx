@@ -14,6 +14,8 @@ export default function DashboardView() {
   const hourOptions = Array.from({ length: 24 }, (_, hour) => String(hour))
   const [showLogs, setShowLogs] = useState(false)
   const [showAlerts, setShowAlerts] = useState(false)
+  const [presetNameInput, setPresetNameInput] = useState('')
+  const [selectedPresetName, setSelectedPresetName] = useState('')
 
   return (
     <div style={{ padding: '24px' }}>
@@ -34,6 +36,49 @@ export default function DashboardView() {
         />
 
         <button onClick={vm.reload}>Refresh</button>
+      </div>
+
+      <div className="card" style={{ marginBottom: '24px' }}>
+        <h3>Saved Work Filters</h3>
+        <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', alignItems: 'center' }}>
+          <input
+            type="text"
+            placeholder="Preset name"
+            value={presetNameInput}
+            onChange={(event) => setPresetNameInput(event.target.value)}
+          />
+          <button
+            onClick={() => {
+              vm.saveCurrentFilterPreset(presetNameInput)
+              setPresetNameInput('')
+            }}
+          >
+            Save current filters
+          </button>
+          <select value={selectedPresetName} onChange={(event) => setSelectedPresetName(event.target.value)}>
+            <option value="">Select preset</option>
+            {Object.keys(vm.filterPresets || {}).map((name) => (
+              <option key={name} value={name}>
+                {name}
+              </option>
+            ))}
+          </select>
+          <button
+            disabled={!selectedPresetName}
+            onClick={() => vm.applyFilterPreset(selectedPresetName)}
+          >
+            Load preset
+          </button>
+          <button
+            disabled={!selectedPresetName}
+            onClick={() => {
+              vm.deleteFilterPreset(selectedPresetName)
+              setSelectedPresetName('')
+            }}
+          >
+            Delete preset
+          </button>
+        </div>
       </div>
 
       {vm.loading && <LoadingSpinner />}
@@ -165,7 +210,11 @@ export default function DashboardView() {
             </p>
 
             <div className="dashboard-logs-scroll-container">
-              <LogsTable logs={vm.filteredLogs} />
+              <LogsTable
+                logs={vm.filteredLogs}
+                onPivotIp={vm.pivotToIp}
+                onPivotSource={vm.pivotToSource}
+              />
             </div>
           </>
         )}
@@ -307,7 +356,11 @@ export default function DashboardView() {
             </p>
 
             <div className="dashboard-alerts-scroll-container">
-              <AlertsTable alerts={vm.filteredAlerts || []} onCloseAlert={vm.closeAlert} />
+              <AlertsTable
+                alerts={vm.filteredAlerts || []}
+                onCloseAlert={vm.closeAlert}
+                onPivotMessage={vm.pivotFromAlertMessage}
+              />
             </div>
           </>
         )}

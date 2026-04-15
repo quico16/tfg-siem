@@ -1,4 +1,4 @@
-export default function AlertsTable({ alerts, onCloseAlert }) {
+export default function AlertsTable({ alerts, onCloseAlert, onPivotMessage }) {
   const formatDateToSeconds = (value) => {
     const text = String(value ?? '')
     const withoutMs = text.split('.')[0]
@@ -35,7 +35,12 @@ export default function AlertsTable({ alerts, onCloseAlert }) {
             <td>{alert.ruleKey ?? '-'}</td>
             <td>{alert.fingerprint ?? '-'}</td>
             <td>{alert.correlationKey ?? '-'}</td>
-            <td>{alert.message}</td>
+            <td>
+              <div style={{ display: 'flex', gap: '6px', alignItems: 'flex-start' }}>
+                <span>{alert.message}</span>
+                <button onClick={() => onPivotMessage?.(alert.message)}>Pivot</button>
+              </div>
+            </td>
             <td>{alert.status}</td>
             <td>
               {alert.status === 'OPEN' ? (

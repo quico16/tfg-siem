@@ -4,6 +4,27 @@ import { dashboardService } from '../services/dashboardService'
 import { alertService } from '../services/alertService'
 import { logService } from '../services/logService'
 
+const FILTER_PRESETS_STORAGE_KEY = 'siem.dashboard.filterPresets'
+
+function readFilterPresets() {
+  try {
+    const raw = window.localStorage.getItem(FILTER_PRESETS_STORAGE_KEY)
+    if (!raw) {
+      return {}
+    }
+
+    const parsed = JSON.parse(raw)
+    return parsed && typeof parsed === 'object' ? parsed : {}
+  } catch (error) {
+    console.error('Failed to read filter presets', error)
+    return {}
+  }
+}
+
+function writeFilterPresets(nextPresets) {
+  window.localStorage.setItem(FILTER_PRESETS_STORAGE_KEY, JSON.stringify(nextPresets))
+}
+
 function formatDateOnly(date) {
   const year = date.getFullYear()
   const month = String(date.getMonth() + 1).padStart(2, '0')
@@ -73,6 +94,7 @@ export function useDashboardViewModel() {
   const [logHourEndFilter, setLogHourEndFilter] = useState('ALL')
   const [alertHourStartFilter, setAlertHourStartFilter] = useState('ALL')
   const [alertHourEndFilter, setAlertHourEndFilter] = useState('ALL')
+  const [filterPresets, setFilterPresets] = useState(readFilterPresets)
 
   const defaults = getDefaultDateRange()
   const [startDate, setStartDate] = useState(defaults.startDate)
@@ -444,6 +466,111 @@ export function useDashboardViewModel() {
     logHourEndFilter
   ])
 
+  const applyPresetData = useCallback((preset) => {
+    if (!preset) {
+      return
+    }
+
+    setSelectedCompanyId(preset.selectedCompanyId ?? 'ALL')
+    setStartDate(preset.startDate ?? startDate)
+    setEndDate(preset.endDate ?? endDate)
+
+    setAlertStatusFilter(preset.alertStatusFilter ?? 'ALL')
+    setAlertHourStartFilter(preset.alertHourStartFilter ?? 'ALL')
+    setAlertHourEndFilter(preset.alertHourEndFilter ?? 'ALL')
+
+    setLogLevelFilter(preset.logLevelFilter ?? 'ALL')
+    setLogSourceFilter(preset.logSourceFilter ?? 'ALL')
+    setLogSourceTypeFilter(preset.logSourceTypeFilter ?? 'ALL')
+    setLogAlertLinkFilter(preset.logAlertLinkFilter ?? 'ALL')
+    setLogHourStartFilter(preset.logHourStartFilter ?? 'ALL')
+    setLogHourEndFilter(preset.logHourEndFilter ?? 'ALL')
+    setLogIpFilter(preset.logIpFilter ?? '')
+    setLogSearchFilter(preset.logSearchFilter ?? '')
+  }, [endDate, startDate])
+
+  const saveCurrentFilterPreset = useCallback((name) => {
+    const safeName = String(name ?? '').trim()
+    if (!safeName) {
+      return
+    }
+
+    const nextPresets = {
+      ...filterPresets,
+      [safeName]: {
+        selectedCompanyId,
+        startDate,
+        endDate,
+        alertStatusFilter,
+        alertHourStartFilter,
+        alertHourEndFilter,
+        logLevelFilter,
+        logSourceFilter,
+        logSourceTypeFilter,
+        logAlertLinkFilter,
+        logHourStartFilter,
+        logHourEndFilter,
+        logIpFilter,
+        logSearchFilter
+      }
+    }
+
+    setFilterPresets(nextPresets)
+    writeFilterPresets(nextPresets)
+  }, [
+    filterPresets,
+    selectedCompanyId,
+    startDate,
+    endDate,
+    alertStatusFilter,
+    alertHourStartFilter,
+    alertHourEndFilter,
+    logLevelFilter,
+    logSourceFilter,
+    logSourceTypeFilter,
+    logAlertLinkFilter,
+    logHourStartFilter,
+    logHourEndFilter,
+    logIpFilter,
+    logSearchFilter
+  ])
+
+  const applyFilterPreset = useCallback((name) => {
+    const preset = filterPresets[name]
+    applyPresetData(preset)
+  }, [applyPresetData, filterPresets])
+
+  const deleteFilterPreset = useCallback((name) => {
+    const nextPresets = { ...filterPresets }
+    delete nextPresets[name]
+    setFilterPresets(nextPresets)
+    writeFilterPresets(nextPresets)
+  }, [filterPresets])
+
+  const pivotToIp = useCallback((ip) => {
+    if (!ip) {
+      return
+    }
+
+    setLogIpFilter(ip)
+  }, [])
+
+  const pivotToSource = useCallback((sourceName) => {
+    if (!sourceName) {
+      return
+    }
+
+    setLogSourceFilter(sourceName)
+  }, [])
+
+  const pivotFromAlertMessage = useCallback((message) => {
+    if (!message) {
+      return
+    }
+
+    setLogSearchFilter(String(message).slice(0, 80))
+  }, [])
+
   useEffect(() => {
     if (!isAllCompaniesSelected) {
       setSelectedAffectedCompanyIds([])
@@ -517,7 +644,14 @@ export function useDashboardViewModel() {
     alertHourStartFilter,
     setAlertHourStartFilter,
     alertHourEndFilter,
-    setAlertHourEndFilter
+    setAlertHourEndFilter,
+    filterPresets,
+    saveCurrentFilterPreset,
+    applyFilterPreset,
+    deleteFilterPreset,
+    pivotToIp,
+    pivotToSource,
+    pivotFromAlertMessage
   }
 }
 
