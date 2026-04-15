@@ -229,6 +229,16 @@ export function useDashboardViewModel() {
     }
   }
 
+  const updateAlertWorkflow = async (alertId, payload) => {
+    try {
+      await alertService.updateWorkflow(alertId, payload)
+      await loadDashboardData()
+    } catch (err) {
+      setError('Failed to update alert workflow')
+      console.error(err)
+    }
+  }
+
   const availableAlertCompanies = useMemo(() => {
     if (!isAllCompaniesSelected) {
       return []
@@ -528,6 +538,7 @@ export function useDashboardViewModel() {
     error,
     reload: loadDashboardData,
     closeAlert,
+    updateAlertWorkflow,
     alertStatusFilter,
     setAlertStatusFilter,
     selectedAffectedCompanyIds,

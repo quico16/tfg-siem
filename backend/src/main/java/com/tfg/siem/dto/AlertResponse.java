@@ -17,6 +17,8 @@ public class AlertResponse {
     private String correlationKey;
     private String message;
     private AlertStatus status;
+    private String owner;
+    private LocalDateTime statusUpdatedAt;
     private LocalDateTime createdAt;
 
     public AlertResponse() {
@@ -66,6 +68,14 @@ public class AlertResponse {
         return createdAt;
     }
 
+    public String getOwner() {
+        return owner;
+    }
+
+    public LocalDateTime getStatusUpdatedAt() {
+        return statusUpdatedAt;
+    }
+
     public void setId(Long id) {
         this.id = id;
     }
@@ -104,6 +114,14 @@ public class AlertResponse {
 
     public void setStatus(AlertStatus status) {
         this.status = status;
+    }
+
+    public void setOwner(String owner) {
+        this.owner = owner;
+    }
+
+    public void setStatusUpdatedAt(LocalDateTime statusUpdatedAt) {
+        this.statusUpdatedAt = statusUpdatedAt;
     }
 
     public void setCreatedAt(LocalDateTime createdAt) {

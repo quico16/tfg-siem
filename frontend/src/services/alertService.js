@@ -9,5 +9,10 @@ export const alertService = {
   async closeAlert(alertId) {
     const response = await api.patch(`/alerts/${alertId}/close`)
     return response.data
+  },
+
+  async updateWorkflow(alertId, payload) {
+    const response = await api.patch(`/alerts/${alertId}/workflow`, payload)
+    return response.data
   }
 }
