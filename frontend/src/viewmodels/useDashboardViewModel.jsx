@@ -3,6 +3,7 @@ import { companyService } from '../services/companyService'
 import { dashboardService } from '../services/dashboardService'
 import { alertService } from '../services/alertService'
 import { logService } from '../services/logService'
+import { caseService } from '../services/caseService'
 
 function formatDateOnly(date) {
   const year = date.getFullYear()
@@ -55,6 +56,7 @@ export function useDashboardViewModel() {
   const [logs, setLogs] = useState([])
   const [alerts, setAlerts] = useState([])
   const [alertsForCorrelation, setAlertsForCorrelation] = useState([])
+  const [cases, setCases] = useState([])
   const [selectedAffectedCompanyIds, setSelectedAffectedCompanyIds] = useState([])
   const [affectedCompaniesFilterMode, setAffectedCompaniesFilterMode] = useState('ALL_ALERTS')
   const [affectedAlertsViewMode, setAffectedAlertsViewMode] = useState('ANY_SELECTED')
@@ -105,6 +107,16 @@ export function useDashboardViewModel() {
       console.error(err)
     }
   }, [selectedCompanyId])
+
+  const loadCases = useCallback(async () => {
+    try {
+      const data = await caseService.getAll()
+      setCases(data ?? [])
+    } catch (err) {
+      setError('Failed to load cases')
+      console.error(err)
+    }
+  }, [])
 
   const loadDashboardData = useCallback(async () => {
     if (selectedCompanyIds.length === 0) {
@@ -204,6 +216,26 @@ export function useDashboardViewModel() {
       await loadDashboardData()
     } catch (err) {
       setError('Failed to close alert')
+      console.error(err)
+    }
+  }
+
+  const createCase = async (payload) => {
+    try {
+      await caseService.create(payload)
+      await loadCases()
+    } catch (err) {
+      setError('Failed to create case')
+      console.error(err)
+    }
+  }
+
+  const updateCaseStatus = async (caseId, status) => {
+    try {
+      await caseService.updateStatus(caseId, status)
+      await loadCases()
+    } catch (err) {
+      setError('Failed to update case status')
       console.error(err)
     }
   }
@@ -462,6 +494,10 @@ export function useDashboardViewModel() {
   }, [loadCompanies])
 
   useEffect(() => {
+    loadCases()
+  }, [loadCases])
+
+  useEffect(() => {
     loadDashboardData()
   }, [loadDashboardData])
 
@@ -484,10 +520,13 @@ export function useDashboardViewModel() {
     availableLogSources,
     availableLogSourceTypes,
     filteredLogs,
+    cases,
     loading,
     error,
     reload: loadDashboardData,
     closeAlert,
+    createCase,
+    updateCaseStatus,
     alertStatusFilter,
     setAlertStatusFilter,
     selectedAffectedCompanyIds,
