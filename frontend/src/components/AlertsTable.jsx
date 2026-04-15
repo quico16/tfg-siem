@@ -1,4 +1,9 @@
-export default function AlertsTable({ alerts, onCloseAlert }) {
+export default function AlertsTable({
+  alerts,
+  onCloseAlert,
+  selectedAlertIds = [],
+  onToggleAlertSelection
+}) {
   const formatDateToSeconds = (value) => {
     const text = String(value ?? '')
     const withoutMs = text.split('.')[0]
@@ -9,6 +14,7 @@ export default function AlertsTable({ alerts, onCloseAlert }) {
     <table className="sticky-header-table">
       <thead>
         <tr>
+          <th>Select</th>
           <th>ID</th>
           <th>Company</th>
           <th>Type</th>
@@ -26,6 +32,13 @@ export default function AlertsTable({ alerts, onCloseAlert }) {
       <tbody>
         {alerts.map((alert) => (
           <tr key={alert.id}>
+            <td>
+              <input
+                type="checkbox"
+                checked={selectedAlertIds.includes(alert.id)}
+                onChange={() => onToggleAlertSelection?.(alert.id)}
+              />
+            </td>
             <td>{alert.id}</td>
             <td>{alert.companyName ?? '-'}</td>
             <td>{alert.sharedTypeLabel ?? '-'}</td>
