@@ -300,6 +300,12 @@ export default function DashboardView() {
                   ))}
                 </select>
               </div>
+
+              <select value={vm.alertSortMode} onChange={(e) => vm.setAlertSortMode(e.target.value)}>
+                <option value="RISK_DESC">Sort: highest risk first</option>
+                <option value="NEWEST">Sort: newest first</option>
+                <option value="OLDEST">Sort: oldest first</option>
+              </select>
             </div>
 
             <p style={{ marginTop: '10px', marginBottom: '10px' }}>

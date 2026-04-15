@@ -47,6 +47,26 @@ function getHourFromTimestamp(timestamp) {
   return date.getHours()
 }
 
+function calculateRiskScore(alert, companiesAffectedCount) {
+  const severityWeight = {
+    CRITICAL: 70,
+    WARNING: 45,
+    INFO: 25
+  }
+
+  const base = severityWeight[alert.severity] ?? 20
+  const statusBonus = alert.status === 'OPEN' ? 20 : 0
+  const crossCompanyBonus = companiesAffectedCount > 1 ? 10 : 0
+
+  const createdAt = new Date(alert.createdAt)
+  const ageMinutes = Number.isNaN(createdAt.getTime())
+    ? Number.MAX_SAFE_INTEGER
+    : Math.floor((Date.now() - createdAt.getTime()) / 60000)
+  const freshnessBonus = ageMinutes <= 60 ? 10 : 0
+
+  return Math.max(0, Math.min(100, base + statusBonus + crossCompanyBonus + freshnessBonus))
+}
+
 export function useDashboardViewModel() {
   const [companies, setCompanies] = useState([])
   const [selectedCompanyId, setSelectedCompanyId] = useState('')
@@ -73,6 +93,7 @@ export function useDashboardViewModel() {
   const [logHourEndFilter, setLogHourEndFilter] = useState('ALL')
   const [alertHourStartFilter, setAlertHourStartFilter] = useState('ALL')
   const [alertHourEndFilter, setAlertHourEndFilter] = useState('ALL')
+  const [alertSortMode, setAlertSortMode] = useState('RISK_DESC')
 
   const defaults = getDefaultDateRange()
   const [startDate, setStartDate] = useState(defaults.startDate)
@@ -297,7 +318,7 @@ export function useDashboardViewModel() {
       keyToCompanies.set(key, companiesForKey)
     })
 
-    return nextAlerts.map((alert) => {
+    const alertsWithRisk = nextAlerts.map((alert) => {
       const correlationKey = buildCorrelationKey(alert)
       const affectedCompaniesMap = keyToCompanies.get(correlationKey) || new Map()
       const companiesAffectedCount = affectedCompaniesMap.size || 1
@@ -309,9 +330,27 @@ export function useDashboardViewModel() {
 
       return {
         ...alert,
+        riskScore: calculateRiskScore(alert, companiesAffectedCount),
         sharedTypeLabel,
         affectedCompanyNames
       }
+    })
+
+    return [...alertsWithRisk].sort((left, right) => {
+      if (alertSortMode === 'OLDEST') {
+        return new Date(left.createdAt).getTime() - new Date(right.createdAt).getTime()
+      }
+
+      if (alertSortMode === 'NEWEST') {
+        return new Date(right.createdAt).getTime() - new Date(left.createdAt).getTime()
+      }
+
+      const scoreDiff = (right.riskScore ?? 0) - (left.riskScore ?? 0)
+      if (scoreDiff !== 0) {
+        return scoreDiff
+      }
+
+      return new Date(right.createdAt).getTime() - new Date(left.createdAt).getTime()
     })
   }, [
     alerts,
@@ -323,7 +362,8 @@ export function useDashboardViewModel() {
     affectedCompaniesFilterMode,
     affectedAlertsViewMode,
     selectedAffectedCompanyIds,
-    selectedCompanyIds
+    selectedCompanyIds,
+    alertSortMode
   ])
 
   const availableLogSources = useMemo(() => {
@@ -517,7 +557,9 @@ export function useDashboardViewModel() {
     alertHourStartFilter,
     setAlertHourStartFilter,
     alertHourEndFilter,
-    setAlertHourEndFilter
+    setAlertHourEndFilter,
+    alertSortMode,
+    setAlertSortMode
   }
 }
 

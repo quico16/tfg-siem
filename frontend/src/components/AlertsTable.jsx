@@ -15,6 +15,7 @@ export default function AlertsTable({ alerts, onCloseAlert }) {
           <th>Affected Companies</th>
           <th>Date</th>
           <th>Level</th>
+          <th>Risk Score</th>
           <th>Rule Key</th>
           <th>Fingerprint</th>
           <th>Correlation Key</th>
@@ -32,6 +33,7 @@ export default function AlertsTable({ alerts, onCloseAlert }) {
             <td>{(alert.affectedCompanyNames || []).join(', ') || '-'}</td>
             <td>{formatDateToSeconds(alert.createdAt)}</td>
             <td>{alert.severity}</td>
+            <td>{alert.riskScore ?? '-'}</td>
             <td>{alert.ruleKey ?? '-'}</td>
             <td>{alert.fingerprint ?? '-'}</td>
             <td>{alert.correlationKey ?? '-'}</td>
