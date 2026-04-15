@@ -1,10 +1,37 @@
+param(
+    [string]$BaseUrl = "http://localhost:8080"
+)
+
 $ErrorActionPreference = "Stop"
 
-$baseUrl = "http://localhost:8080"
+$baseUrl = $BaseUrl.TrimEnd('/')
+[Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12
+
+function Invoke-WithRetry {
+    param(
+        [scriptblock]$Operation,
+        [int]$MaxRetries = 6,
+        [int]$DelaySeconds = 3
+    )
+
+    $attempt = 1
+    while ($true) {
+        try {
+            return & $Operation
+        }
+        catch {
+            if ($attempt -ge $MaxRetries) { throw }
+            Start-Sleep -Seconds ($DelaySeconds * $attempt)
+            $attempt++
+        }
+    }
+}
 
 function Invoke-ApiGet {
     param([string]$Path)
-    return Invoke-RestMethod -Uri "$baseUrl$Path" -Method Get
+    return Invoke-WithRetry -Operation {
+        Invoke-RestMethod -Uri "$baseUrl$Path" -Method Get -TimeoutSec 120
+    }
 }
 
 function Invoke-ApiPost {
@@ -14,7 +41,9 @@ function Invoke-ApiPost {
     )
 
     $json = $Body | ConvertTo-Json -Depth 10
-    return Invoke-RestMethod -Uri "$baseUrl$Path" -Method Post -ContentType "application/json" -Body $json
+    return Invoke-WithRetry -Operation {
+        Invoke-RestMethod -Uri "$baseUrl$Path" -Method Post -ContentType "application/json" -Body $json -TimeoutSec 120
+    }
 }
 
 function Ensure-Company {
