@@ -104,6 +104,32 @@ export default function DashboardView() {
         </div>
       )}
 
+      <div className="card" style={{ marginBottom: '24px' }}>
+        <h3>SOC Operational Metrics</h3>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, minmax(180px, 1fr))', gap: '10px' }}>
+          <div>
+            <strong>Backlog Open:</strong> {vm.socMetrics.backlogOpen}
+          </div>
+          <div>
+            <strong>Open Rate:</strong> {vm.socMetrics.openRate}%
+          </div>
+          <div>
+            <strong>Critical Open:</strong> {vm.socMetrics.criticalOpen}
+          </div>
+          <div>
+            <strong>MTTD:</strong>{' '}
+            {vm.socMetrics.mttdMinutes == null ? 'N/A' : `${vm.socMetrics.mttdMinutes} min`}
+          </div>
+          <div>
+            <strong>MTTR:</strong>{' '}
+            {vm.socMetrics.mttrMinutes == null ? 'N/A' : `${vm.socMetrics.mttrMinutes} min`}
+          </div>
+          <div>
+            <strong>Total Alerts:</strong> {vm.socMetrics.totalAlerts}
+          </div>
+        </div>
+      </div>
+
       <div style={{ marginBottom: '24px' }}>
         <LevelsChart
           levels={vm.levels || []}
@@ -152,6 +178,44 @@ export default function DashboardView() {
       )}
 
       <div className="card" style={{ marginBottom: '24px' }}>
+        <h3>SLA & Aging (Open Alerts)</h3>
+        <p style={{ marginTop: 0 }}>
+          Open: <strong>{vm.alertAgingSummary.totalOpen}</strong> | Under 1h:{' '}
+          <strong>{vm.alertAgingSummary.under1h}</strong> | 1h-4h:{' '}
+          <strong>{vm.alertAgingSummary.between1hAnd4h}</strong> | Over 4h:{' '}
+          <strong>{vm.alertAgingSummary.over4h}</strong>
+        </p>
+        <p style={{ marginTop: 0 }}>
+          SLA breached alerts: <strong>{vm.slaBreachedAlerts.length}</strong>
+        </p>
+        {vm.slaBreachedAlerts.length > 0 && (
+          <div className="dashboard-alerts-scroll-container">
+            <table className="sticky-header-table">
+              <thead>
+                <tr>
+                  <th>ID</th>
+                  <th>Company</th>
+                  <th>Severity</th>
+                  <th>Age (min)</th>
+                  <th>SLA (min)</th>
+                  <th>Message</th>
+                </tr>
+              </thead>
+              <tbody>
+                {vm.slaBreachedAlerts.slice(0, 30).map((alert) => (
+                  <tr key={`sla-${alert.id}`}>
+                    <td>{alert.id}</td>
+                    <td>{alert.companyName ?? '-'}</td>
+                    <td>{alert.severity}</td>
+                    <td>{alert.ageMinutes}</td>
+                    <td>{alert.slaMinutes}</td>
+                    <td>{alert.message}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
         <h3>Case Management</h3>
         <div style={{ display: 'grid', gap: '8px', marginBottom: '12px' }}>
           <input

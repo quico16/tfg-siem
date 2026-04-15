@@ -469,6 +469,7 @@ public class AlertService {
         response.setResolutionType(alert.getResolutionType());
         response.setResolutionNote(alert.getResolutionNote());
         response.setCreatedAt(alert.getCreatedAt());
+        response.setClosedAt(alert.getClosedAt());
         return response;
     }
 

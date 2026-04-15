@@ -89,6 +89,35 @@ function calculateRiskScore(alert, companiesAffectedCount) {
   return Math.max(0, Math.min(100, base + statusBonus + crossCompanyBonus + freshnessBonus))
 }
 
+function getMinutesSince(dateValue) {
+  const date = new Date(dateValue)
+  if (Number.isNaN(date.getTime())) {
+    return 0
+  }
+
+  return Math.floor((Date.now() - date.getTime()) / 60000)
+}
+
+function getSlaMinutesBySeverity(severity) {
+  if (severity === 'CRITICAL') {
+    return 60
+  }
+  if (severity === 'WARNING') {
+    return 240
+  }
+  return 720
+}
+
+function getMinutesBetween(startValue, endValue) {
+  const start = new Date(startValue)
+  const end = new Date(endValue)
+  if (Number.isNaN(start.getTime()) || Number.isNaN(end.getTime())) {
+    return null
+  }
+
+  return Math.max(0, Math.floor((end.getTime() - start.getTime()) / 60000))
+}
+
 export function useDashboardViewModel() {
   const [companies, setCompanies] = useState([])
   const [selectedCompanyId, setSelectedCompanyId] = useState('')
@@ -701,6 +730,85 @@ export function useDashboardViewModel() {
     }
   }
 
+  const alertAgingSummary = useMemo(() => {
+    const openAlerts = filteredAlerts.filter((alert) => alert.status === 'OPEN')
+    const buckets = {
+      under1h: 0,
+      between1hAnd4h: 0,
+      over4h: 0
+    }
+
+    openAlerts.forEach((alert) => {
+      const ageMinutes = getMinutesSince(alert.createdAt)
+      if (ageMinutes < 60) {
+        buckets.under1h += 1
+      } else if (ageMinutes < 240) {
+        buckets.between1hAnd4h += 1
+      } else {
+        buckets.over4h += 1
+      }
+    })
+
+    return {
+      totalOpen: openAlerts.length,
+      ...buckets
+    }
+  }, [filteredAlerts])
+
+  const slaBreachedAlerts = useMemo(
+    () =>
+      filteredAlerts
+        .filter((alert) => alert.status === 'OPEN')
+        .map((alert) => {
+          const ageMinutes = getMinutesSince(alert.createdAt)
+          const slaMinutes = getSlaMinutesBySeverity(alert.severity)
+          return {
+            ...alert,
+            ageMinutes,
+            slaMinutes,
+            isBreached: ageMinutes > slaMinutes
+          }
+        })
+        .filter((alert) => alert.isBreached)
+        .sort((a, b) => b.ageMinutes - a.ageMinutes),
+    [filteredAlerts]
+  )
+
+  const socMetrics = useMemo(() => {
+    const openAlerts = filteredAlerts.filter((alert) => alert.status === 'OPEN')
+    const closedAlerts = filteredAlerts.filter((alert) => alert.status === 'CLOSED')
+    const totalAlerts = filteredAlerts.length
+
+    const mttrSamples = closedAlerts
+      .map((alert) => getMinutesBetween(alert.createdAt, alert.closedAt))
+      .filter((value) => value != null)
+
+    const logsById = new Map(logs.map((log) => [String(log.id), log]))
+    const mttdSamples = filteredAlerts
+      .map((alert) => {
+        const sourceLog = logsById.get(String(alert.logId))
+        if (!sourceLog) {
+          return null
+        }
+        return getMinutesBetween(sourceLog.timestamp, alert.createdAt)
+      })
+      .filter((value) => value != null)
+
+    const average = (items) =>
+      items.length === 0
+        ? null
+        : Math.round(items.reduce((acc, value) => acc + value, 0) / items.length)
+
+    return {
+      backlogOpen: openAlerts.length,
+      totalAlerts,
+      openRate: totalAlerts === 0 ? 0 : Math.round((openAlerts.length / totalAlerts) * 100),
+      criticalOpen: openAlerts.filter((alert) => alert.severity === 'CRITICAL').length,
+      mttdMinutes: average(mttdSamples),
+      mttrMinutes: average(mttrSamples)
+    }
+  }, [filteredAlerts, logs])
+
   useEffect(() => {
     if (!isAllCompaniesSelected) {
       setSelectedAffectedCompanyIds([])
@@ -746,6 +854,9 @@ export function useDashboardViewModel() {
     availableLogSourceTypes,
     filteredLogs,
     groupedAlerts,
+    alertAgingSummary,
+    slaBreachedAlerts,
+    socMetrics,
     cases,
     crossCompanyCampaigns,
     loading,

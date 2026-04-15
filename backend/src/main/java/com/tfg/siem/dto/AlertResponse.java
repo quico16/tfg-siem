@@ -23,6 +23,7 @@ public class AlertResponse {
     private AlertResolutionType resolutionType;
     private String resolutionNote;
     private LocalDateTime createdAt;
+    private LocalDateTime closedAt;
 
     public AlertResponse() {
     }
@@ -87,6 +88,10 @@ public class AlertResponse {
         return resolutionNote;
     }
 
+    public LocalDateTime getClosedAt() {
+        return closedAt;
+    }
+
     public void setId(Long id) {
         this.id = id;
     }
@@ -145,5 +150,9 @@ public class AlertResponse {
 
     public void setCreatedAt(LocalDateTime createdAt) {
         this.createdAt = createdAt;
+    }
+
+    public void setClosedAt(LocalDateTime closedAt) {
+        this.closedAt = closedAt;
     }
 }
