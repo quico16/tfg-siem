@@ -47,6 +47,16 @@ function getHourFromTimestamp(timestamp) {
   return date.getHours()
 }
 
+function getMinutesBetween(startValue, endValue) {
+  const start = new Date(startValue)
+  const end = new Date(endValue)
+  if (Number.isNaN(start.getTime()) || Number.isNaN(end.getTime())) {
+    return null
+  }
+
+  return Math.max(0, Math.floor((end.getTime() - start.getTime()) / 60000))
+}
+
 export function useDashboardViewModel() {
   const [companies, setCompanies] = useState([])
   const [selectedCompanyId, setSelectedCompanyId] = useState('')
@@ -444,6 +454,39 @@ export function useDashboardViewModel() {
     logHourEndFilter
   ])
 
+  const socMetrics = useMemo(() => {
+    const openAlerts = filteredAlerts.filter((alert) => alert.status === 'OPEN')
+    const closedAlerts = filteredAlerts.filter((alert) => alert.status === 'CLOSED')
+    const totalAlerts = filteredAlerts.length
+
+    const mttrSamples = closedAlerts
+      .map((alert) => getMinutesBetween(alert.createdAt, alert.closedAt))
+      .filter((value) => value != null)
+
+    const logsById = new Map(logs.map((log) => [String(log.id), log]))
+    const mttdSamples = filteredAlerts
+      .map((alert) => {
+        const sourceLog = logsById.get(String(alert.logId))
+        if (!sourceLog) {
+          return null
+        }
+        return getMinutesBetween(sourceLog.timestamp, alert.createdAt)
+      })
+      .filter((value) => value != null)
+
+    const average = (items) =>
+      items.length === 0 ? null : Math.round(items.reduce((acc, value) => acc + value, 0) / items.length)
+
+    return {
+      backlogOpen: openAlerts.length,
+      totalAlerts,
+      openRate: totalAlerts === 0 ? 0 : Math.round((openAlerts.length / totalAlerts) * 100),
+      criticalOpen: openAlerts.filter((alert) => alert.severity === 'CRITICAL').length,
+      mttdMinutes: average(mttdSamples),
+      mttrMinutes: average(mttrSamples)
+    }
+  }, [filteredAlerts, logs])
+
   useEffect(() => {
     if (!isAllCompaniesSelected) {
       setSelectedAffectedCompanyIds([])
@@ -484,6 +527,7 @@ export function useDashboardViewModel() {
     availableLogSources,
     availableLogSourceTypes,
     filteredLogs,
+    socMetrics,
     loading,
     error,
     reload: loadDashboardData,
