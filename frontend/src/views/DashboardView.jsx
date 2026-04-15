@@ -112,6 +112,45 @@ export default function DashboardView() {
         />
       </div>
 
+      {vm.crossCompanyCampaigns.length > 0 && (
+        <div className="card" style={{ marginBottom: '24px' }}>
+          <h3>Cross-Company Campaigns</h3>
+          <p style={{ marginTop: 0 }}>
+            Shared detection indicators across selected companies.
+          </p>
+          <div className="dashboard-alerts-scroll-container">
+            <table className="sticky-header-table">
+              <thead>
+                <tr>
+                  <th>Severity</th>
+                  <th>Indicator</th>
+                  <th>Affected</th>
+                  <th>Open</th>
+                  <th>Closed</th>
+                  <th>Latest</th>
+                  <th>Companies</th>
+                </tr>
+              </thead>
+              <tbody>
+                {vm.crossCompanyCampaigns.map((item, index) => (
+                  <tr key={`${item.message}-${index}`}>
+                    <td>{item.severity}</td>
+                    <td>{item.message}</td>
+                    <td>
+                      {item.affectedCompanies}/{item.totalSelectedCompanies}
+                    </td>
+                    <td>{item.openAlerts}</td>
+                    <td>{item.closedAlerts}</td>
+                    <td>{String(item.latestCreatedAt ?? '').replace('T', ' ').split('.')[0]}</td>
+                    <td>{(item.companyNames || []).join(', ')}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      )}
+
       <div className="card" style={{ marginBottom: '24px' }}>
         <h3>Case Management</h3>
         <div style={{ display: 'grid', gap: '8px', marginBottom: '12px' }}>
