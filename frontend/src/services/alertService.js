@@ -9,5 +9,15 @@ export const alertService = {
   async closeAlert(alertId) {
     const response = await api.patch(`/alerts/${alertId}/close`)
     return response.data
+  },
+
+  async getCrossCompany(companyIds, minAffectedCompanies = 2) {
+    const response = await api.get('/alerts/cross-company', {
+      params: {
+        companyIds,
+        minAffectedCompanies
+      }
+    })
+    return response.data
   }
 }

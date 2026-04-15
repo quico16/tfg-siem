@@ -55,6 +55,7 @@ export function useDashboardViewModel() {
   const [logs, setLogs] = useState([])
   const [alerts, setAlerts] = useState([])
   const [alertsForCorrelation, setAlertsForCorrelation] = useState([])
+  const [crossCompanyCampaigns, setCrossCompanyCampaigns] = useState([])
   const [selectedAffectedCompanyIds, setSelectedAffectedCompanyIds] = useState([])
   const [affectedCompaniesFilterMode, setAffectedCompaniesFilterMode] = useState('ALL_ALERTS')
   const [affectedAlertsViewMode, setAffectedAlertsViewMode] = useState('ANY_SELECTED')
@@ -113,6 +114,7 @@ export function useDashboardViewModel() {
       setLogs([])
       setAlerts([])
       setAlertsForCorrelation([])
+      setCrossCompanyCampaigns([])
       return
     }
 
@@ -185,11 +187,17 @@ export function useDashboardViewModel() {
         correlationAlerts = [...mergedAlerts, ...otherCompanyAlerts.flatMap((items) => items ?? [])]
       }
 
+      const campaigns =
+        selectedCompanyIds.length > 1
+          ? await alertService.getCrossCompany(selectedCompanyIds.map((id) => Number(id)), 2)
+          : []
+
       setSummary(mergedSummary)
       setLevels(mergedLevels)
       setLogs(mergedLogs)
       setAlerts(mergedAlerts)
       setAlertsForCorrelation(correlationAlerts)
+      setCrossCompanyCampaigns(campaigns ?? [])
     } catch (err) {
       setError('Failed to load dashboard data')
       console.error(err)
@@ -484,6 +492,7 @@ export function useDashboardViewModel() {
     availableLogSources,
     availableLogSourceTypes,
     filteredLogs,
+    crossCompanyCampaigns,
     loading,
     error,
     reload: loadDashboardData,
