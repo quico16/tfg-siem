@@ -3,6 +3,7 @@ import { companyService } from '../services/companyService'
 import { dashboardService } from '../services/dashboardService'
 import { alertService } from '../services/alertService'
 import { logService } from '../services/logService'
+import { caseService } from '../services/caseService'
 
 function formatDateOnly(date) {
   const year = date.getFullYear()
@@ -64,6 +65,14 @@ function getSlaMinutesBySeverity(severity) {
     return 240
   }
   return 720
+function getMinutesBetween(startValue, endValue) {
+  const start = new Date(startValue)
+  const end = new Date(endValue)
+  if (Number.isNaN(start.getTime()) || Number.isNaN(end.getTime())) {
+    return null
+  }
+
+  return Math.max(0, Math.floor((end.getTime() - start.getTime()) / 60000))
 }
 
 export function useDashboardViewModel() {
@@ -74,6 +83,7 @@ export function useDashboardViewModel() {
   const [logs, setLogs] = useState([])
   const [alerts, setAlerts] = useState([])
   const [alertsForCorrelation, setAlertsForCorrelation] = useState([])
+  const [cases, setCases] = useState([])
   const [selectedAffectedCompanyIds, setSelectedAffectedCompanyIds] = useState([])
   const [affectedCompaniesFilterMode, setAffectedCompaniesFilterMode] = useState('ALL_ALERTS')
   const [affectedAlertsViewMode, setAffectedAlertsViewMode] = useState('ANY_SELECTED')
@@ -124,6 +134,16 @@ export function useDashboardViewModel() {
       console.error(err)
     }
   }, [selectedCompanyId])
+
+  const loadCases = useCallback(async () => {
+    try {
+      const data = await caseService.getAll()
+      setCases(data ?? [])
+    } catch (err) {
+      setError('Failed to load cases')
+      console.error(err)
+    }
+  }, [])
 
   const loadDashboardData = useCallback(async () => {
     if (selectedCompanyIds.length === 0) {
@@ -223,6 +243,26 @@ export function useDashboardViewModel() {
       await loadDashboardData()
     } catch (err) {
       setError('Failed to close alert')
+      console.error(err)
+    }
+  }
+
+  const createCase = async (payload) => {
+    try {
+      await caseService.create(payload)
+      await loadCases()
+    } catch (err) {
+      setError('Failed to create case')
+      console.error(err)
+    }
+  }
+
+  const updateCaseStatus = async (caseId, status) => {
+    try {
+      await caseService.updateStatus(caseId, status)
+      await loadCases()
+    } catch (err) {
+      setError('Failed to update case status')
       console.error(err)
     }
   }
@@ -506,6 +546,38 @@ export function useDashboardViewModel() {
         .sort((a, b) => b.ageMinutes - a.ageMinutes),
     [filteredAlerts]
   )
+  const socMetrics = useMemo(() => {
+    const openAlerts = filteredAlerts.filter((alert) => alert.status === 'OPEN')
+    const closedAlerts = filteredAlerts.filter((alert) => alert.status === 'CLOSED')
+    const totalAlerts = filteredAlerts.length
+
+    const mttrSamples = closedAlerts
+      .map((alert) => getMinutesBetween(alert.createdAt, alert.closedAt))
+      .filter((value) => value != null)
+
+    const logsById = new Map(logs.map((log) => [String(log.id), log]))
+    const mttdSamples = filteredAlerts
+      .map((alert) => {
+        const sourceLog = logsById.get(String(alert.logId))
+        if (!sourceLog) {
+          return null
+        }
+        return getMinutesBetween(sourceLog.timestamp, alert.createdAt)
+      })
+      .filter((value) => value != null)
+
+    const average = (items) =>
+      items.length === 0 ? null : Math.round(items.reduce((acc, value) => acc + value, 0) / items.length)
+
+    return {
+      backlogOpen: openAlerts.length,
+      totalAlerts,
+      openRate: totalAlerts === 0 ? 0 : Math.round((openAlerts.length / totalAlerts) * 100),
+      criticalOpen: openAlerts.filter((alert) => alert.severity === 'CRITICAL').length,
+      mttdMinutes: average(mttdSamples),
+      mttrMinutes: average(mttrSamples)
+    }
+  }, [filteredAlerts, logs])
 
   useEffect(() => {
     if (!isAllCompaniesSelected) {
@@ -523,6 +595,10 @@ export function useDashboardViewModel() {
   useEffect(() => {
     loadCompanies()
   }, [loadCompanies])
+
+  useEffect(() => {
+    loadCases()
+  }, [loadCases])
 
   useEffect(() => {
     loadDashboardData()
@@ -549,10 +625,14 @@ export function useDashboardViewModel() {
     filteredLogs,
     alertAgingSummary,
     slaBreachedAlerts,
+    socMetrics,
+    cases,
     loading,
     error,
     reload: loadDashboardData,
     closeAlert,
+    createCase,
+    updateCaseStatus,
     alertStatusFilter,
     setAlertStatusFilter,
     selectedAffectedCompanyIds,
