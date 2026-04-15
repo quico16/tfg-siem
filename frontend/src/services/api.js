@@ -1,8 +1,13 @@
 import axios from 'axios'
 
+const envBaseUrl = import.meta.env.VITE_API_BASE_URL?.trim()
+const normalizedBaseUrl = envBaseUrl
+  ? envBaseUrl.replace(/\/+$/, '')
+  : '/api'
+
 const api = axios.create({
-  baseURL: '/api',
-  timeout: 10000
+  baseURL: normalizedBaseUrl,
+  timeout: 60000
 })
 
 export default api

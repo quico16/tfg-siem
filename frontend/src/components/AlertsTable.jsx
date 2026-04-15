@@ -6,7 +6,7 @@ export default function AlertsTable({ alerts, onCloseAlert }) {
   }
 
   return (
-    <table>
+    <table className="sticky-header-table">
       <thead>
         <tr>
           <th>ID</th>
@@ -15,6 +15,9 @@ export default function AlertsTable({ alerts, onCloseAlert }) {
           <th>Affected Companies</th>
           <th>Date</th>
           <th>Level</th>
+          <th>Rule Key</th>
+          <th>Fingerprint</th>
+          <th>Correlation Key</th>
           <th>Message</th>
           <th>Status</th>
           <th>Action</th>
@@ -29,6 +32,9 @@ export default function AlertsTable({ alerts, onCloseAlert }) {
             <td>{(alert.affectedCompanyNames || []).join(', ') || '-'}</td>
             <td>{formatDateToSeconds(alert.createdAt)}</td>
             <td>{alert.severity}</td>
+            <td>{alert.ruleKey ?? '-'}</td>
+            <td>{alert.fingerprint ?? '-'}</td>
+            <td>{alert.correlationKey ?? '-'}</td>
             <td>{alert.message}</td>
             <td>{alert.status}</td>
             <td>
