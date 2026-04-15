@@ -154,5 +154,6 @@ Treball de Final de Grau - Ciberseguretat
 ## Comanda opcional de seed
 
 ```powershell
-powershell -ExecutionPolicy Bypass -File .\seed-data-varied-dates.ps1
+powershell -ExecutionPolicy Bypass -File .\seed-data-3-companies-100-logs.ps1
 ```
+
