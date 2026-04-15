@@ -2,8 +2,8 @@ package com.tfg.siem.service;
 
 import com.tfg.siem.dto.CompanyResponse;
 import com.tfg.siem.dto.CreateCompanyRequest;
+import com.tfg.siem.exception.BadRequestException;
 import com.tfg.siem.model.Company;
-import com.tfg.siem.exception.*;
 import com.tfg.siem.repository.CompanyRepository;
 import org.springframework.stereotype.Service;
 
