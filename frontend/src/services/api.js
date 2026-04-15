@@ -7,7 +7,7 @@ const normalizedBaseUrl = envBaseUrl
 
 const api = axios.create({
   baseURL: normalizedBaseUrl,
-  timeout: 10000
+  timeout: 60000
 })
 
 export default api
