@@ -307,7 +307,11 @@ export default function DashboardView() {
             </p>
 
             <div className="dashboard-alerts-scroll-container">
-              <AlertsTable alerts={vm.filteredAlerts || []} onCloseAlert={vm.closeAlert} />
+              <AlertsTable
+                alerts={vm.filteredAlerts || []}
+                onCloseAlert={vm.closeAlert}
+                onUpdateWorkflow={vm.updateAlertWorkflow}
+              />
             </div>
           </>
         )}

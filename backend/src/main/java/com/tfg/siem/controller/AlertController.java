@@ -2,10 +2,13 @@ package com.tfg.siem.controller;
 
 import com.tfg.siem.dto.AlertResponse;
 import com.tfg.siem.dto.CrossCompanyAlertResponse;
+import com.tfg.siem.dto.UpdateAlertWorkflowRequest;
 import com.tfg.siem.service.AlertService;
+import jakarta.validation.Valid;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
@@ -42,5 +45,12 @@ public class AlertController {
     @PatchMapping("/{alertId}/close")
     public AlertResponse closeAlert(@PathVariable Long alertId) {
         return alertService.closeAlert(alertId);
+    }
+
+    @PatchMapping("/{alertId}/workflow")
+    public AlertResponse updateWorkflow(
+            @PathVariable Long alertId,
+            @Valid @RequestBody UpdateAlertWorkflowRequest request) {
+        return alertService.updateAlertWorkflow(alertId, request);
     }
 }

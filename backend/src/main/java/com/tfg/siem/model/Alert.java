@@ -52,11 +52,18 @@ public class Alert {
     @Column(nullable = false, length = 20)
     private AlertStatus status;
 
+    @Column(length = 120)
+    private String owner;
+
+    @Column(nullable = false)
+    private LocalDateTime statusUpdatedAt;
+
     @Column(nullable = false)
     private LocalDateTime createdAt;
 
     public Alert() {
         this.createdAt = LocalDateTime.now();
+        this.statusUpdatedAt = this.createdAt;
         this.status = AlertStatus.OPEN;
     }
 
@@ -100,6 +107,14 @@ public class Alert {
         return createdAt;
     }
 
+    public String getOwner() {
+        return owner;
+    }
+
+    public LocalDateTime getStatusUpdatedAt() {
+        return statusUpdatedAt;
+    }
+
     public void setCompany(Company company) {
         this.company = company;
     }
@@ -130,5 +145,10 @@ public class Alert {
 
     public void setStatus(AlertStatus status) {
         this.status = status;
+        this.statusUpdatedAt = LocalDateTime.now();
+    }
+
+    public void setOwner(String owner) {
+        this.owner = owner == null ? null : owner.trim();
     }
 }
