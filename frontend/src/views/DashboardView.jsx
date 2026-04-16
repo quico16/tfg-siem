@@ -21,7 +21,14 @@ export default function DashboardView() {
   const [caseDescription, setCaseDescription] = useState('')
   const [caseOwner, setCaseOwner] = useState('')
 
-  const renderGlobalCompanyScopeFilter = () => (
+  const renderCompanyScopeFilter = ({
+    title,
+    mode,
+    onModeChange,
+    selectedCompanyIds,
+    onSelectedCompanyIdsChange,
+    showCommonToggle = false
+  }) => (
     <div
       className="card"
       style={{
@@ -32,16 +39,13 @@ export default function DashboardView() {
       }}
     >
       <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '10px' }}>
-        <strong>Global Company Scope</strong>
-        <select
-          value={vm.affectedCompaniesFilterMode}
-          onChange={(e) => vm.setAffectedCompaniesFilterMode(e.target.value)}
-        >
+        <strong>{title}</strong>
+        <select value={mode} onChange={(e) => onModeChange(e.target.value)}>
           <option value="ALL_ALERTS">Use all selected companies</option>
           <option value="SELECT_COMPANIES">Filter by selected companies</option>
         </select>
 
-        {vm.affectedCompaniesFilterMode === 'SELECT_COMPANIES' && (
+        {showCommonToggle && mode === 'SELECT_COMPANIES' && (
           <select
             value={vm.affectedAlertsViewMode}
             onChange={(e) => vm.setAffectedAlertsViewMode(e.target.value)}
@@ -52,7 +56,7 @@ export default function DashboardView() {
         )}
       </div>
 
-      {vm.affectedCompaniesFilterMode === 'SELECT_COMPANIES' && (
+      {mode === 'SELECT_COMPANIES' && (
         <div
           style={{
             display: 'grid',
@@ -64,14 +68,12 @@ export default function DashboardView() {
             <label key={company.id} style={{ display: 'flex', alignItems: 'center', gap: '8px', margin: 0 }}>
               <input
                 type="checkbox"
-                checked={vm.selectedAffectedCompanyIds.includes(company.id)}
+                checked={selectedCompanyIds.includes(company.id)}
                 onChange={(e) => {
                   if (e.target.checked) {
-                    vm.setSelectedAffectedCompanyIds([...vm.selectedAffectedCompanyIds, company.id])
+                    onSelectedCompanyIdsChange([...selectedCompanyIds, company.id])
                   } else {
-                    vm.setSelectedAffectedCompanyIds(
-                      vm.selectedAffectedCompanyIds.filter((id) => id !== company.id)
-                    )
+                    onSelectedCompanyIdsChange(selectedCompanyIds.filter((id) => id !== company.id))
                   }
                 }}
               />
@@ -326,7 +328,14 @@ export default function DashboardView() {
         </div>
       </div>
 
-      {vm.isAllCompaniesSelected && renderGlobalCompanyScopeFilter()}
+      {vm.isAllCompaniesSelected &&
+        renderCompanyScopeFilter({
+          title: 'Statistics Company Scope',
+          mode: vm.statsCompaniesFilterMode,
+          onModeChange: vm.setStatsCompaniesFilterMode,
+          selectedCompanyIds: vm.selectedStatsCompanyIds,
+          onSelectedCompanyIdsChange: vm.setSelectedStatsCompanyIds
+        })}
 
       <div className="card" style={{ marginBottom: '24px' }}>
         <div
@@ -347,6 +356,15 @@ export default function DashboardView() {
 
         {showLogs && (
           <>
+            {vm.isAllCompaniesSelected &&
+              renderCompanyScopeFilter({
+                title: 'Logs Company Scope',
+                mode: vm.logCompaniesFilterMode,
+                onModeChange: vm.setLogCompaniesFilterMode,
+                selectedCompanyIds: vm.selectedLogCompanyIds,
+                onSelectedCompanyIdsChange: vm.setSelectedLogCompanyIds
+              })}
+
             <div className="logs-filters-grid" style={{ marginTop: '12px' }}>
               <select value={vm.logLevelFilter} onChange={(e) => vm.setLogLevelFilter(e.target.value)}>
                 <option value="ALL">Level: all</option>
@@ -463,6 +481,16 @@ export default function DashboardView() {
 
         {showAlerts && (
           <>
+            {vm.isAllCompaniesSelected &&
+              renderCompanyScopeFilter({
+                title: 'Alerts Company Scope',
+                mode: vm.affectedCompaniesFilterMode,
+                onModeChange: vm.setAffectedCompaniesFilterMode,
+                selectedCompanyIds: vm.selectedAffectedCompanyIds,
+                onSelectedCompanyIdsChange: vm.setSelectedAffectedCompanyIds,
+                showCommonToggle: true
+              })}
+
             <div className="logs-filters-grid" style={{ marginTop: '12px' }}>
               <select
                 value={vm.alertStatusFilter}
