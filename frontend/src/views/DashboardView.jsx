@@ -216,46 +216,10 @@ export default function DashboardView() {
             </table>
           </div>
         )}
+      </div>
+
+      <div className="card" style={{ marginBottom: '24px' }}>
         <h3>Case Management</h3>
-        <div style={{ display: 'grid', gap: '8px', marginBottom: '12px' }}>
-          <input
-            type="text"
-            placeholder="Case title"
-            value={caseTitle}
-            onChange={(event) => setCaseTitle(event.target.value)}
-          />
-          <input
-            type="text"
-            placeholder="Case owner"
-            value={caseOwner}
-            onChange={(event) => setCaseOwner(event.target.value)}
-          />
-          <textarea
-            placeholder="Case description"
-            value={caseDescription}
-            onChange={(event) => setCaseDescription(event.target.value)}
-          />
-          <p style={{ margin: 0 }}>
-            Selected alerts for case: <strong>{selectedAlertIdsForCase.length}</strong>
-          </p>
-          <button
-            disabled={!caseTitle.trim()}
-            onClick={async () => {
-              await vm.createCase({
-                title: caseTitle,
-                description: caseDescription,
-                owner: caseOwner,
-                alertIds: selectedAlertIdsForCase
-              })
-              setCaseTitle('')
-              setCaseDescription('')
-              setCaseOwner('')
-              setSelectedAlertIdsForCase([])
-            }}
-          >
-            Create case from selection
-          </button>
-        </div>
         <div className="dashboard-alerts-scroll-container">
           <table className="sticky-header-table">
             <thead>
@@ -619,6 +583,49 @@ export default function DashboardView() {
                   )
                 }}
               />
+            </div>
+
+            <div className="card" style={{ marginTop: '12px' }}>
+              <h3>Create Case from Selected Alerts</h3>
+              <div style={{ display: 'grid', gap: '8px', marginBottom: '12px' }}>
+                <input
+                  type="text"
+                  placeholder="Case title"
+                  value={caseTitle}
+                  onChange={(event) => setCaseTitle(event.target.value)}
+                />
+                <input
+                  type="text"
+                  placeholder="Case owner"
+                  value={caseOwner}
+                  onChange={(event) => setCaseOwner(event.target.value)}
+                />
+                <textarea
+                  placeholder="Case description"
+                  value={caseDescription}
+                  onChange={(event) => setCaseDescription(event.target.value)}
+                />
+                <p style={{ margin: 0 }}>
+                  Selected alerts for case: <strong>{selectedAlertIdsForCase.length}</strong>
+                </p>
+                <button
+                  disabled={!caseTitle.trim() || selectedAlertIdsForCase.length === 0}
+                  onClick={async () => {
+                    await vm.createCase({
+                      title: caseTitle,
+                      description: caseDescription,
+                      owner: caseOwner,
+                      alertIds: selectedAlertIdsForCase
+                    })
+                    setCaseTitle('')
+                    setCaseDescription('')
+                    setCaseOwner('')
+                    setSelectedAlertIdsForCase([])
+                  }}
+                >
+                  Create case from selection
+                </button>
+              </div>
             </div>
           </>
         )}
