@@ -14,6 +14,12 @@ export default function DashboardView() {
   const hourOptions = Array.from({ length: 24 }, (_, hour) => String(hour))
   const [showLogs, setShowLogs] = useState(false)
   const [showAlerts, setShowAlerts] = useState(false)
+  const [presetNameInput, setPresetNameInput] = useState('')
+  const [selectedPresetName, setSelectedPresetName] = useState('')
+  const [selectedAlertIdsForCase, setSelectedAlertIdsForCase] = useState([])
+  const [caseTitle, setCaseTitle] = useState('')
+  const [caseDescription, setCaseDescription] = useState('')
+  const [caseOwner, setCaseOwner] = useState('')
 
   return (
     <div style={{ padding: '24px' }}>
@@ -36,6 +42,49 @@ export default function DashboardView() {
         <button onClick={vm.reload}>Refresh</button>
       </div>
 
+      <div className="card" style={{ marginBottom: '24px' }}>
+        <h3>Saved Work Filters</h3>
+        <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', alignItems: 'center' }}>
+          <input
+            type="text"
+            placeholder="Preset name"
+            value={presetNameInput}
+            onChange={(event) => setPresetNameInput(event.target.value)}
+          />
+          <button
+            onClick={() => {
+              vm.saveCurrentFilterPreset(presetNameInput)
+              setPresetNameInput('')
+            }}
+          >
+            Save current filters
+          </button>
+          <select value={selectedPresetName} onChange={(event) => setSelectedPresetName(event.target.value)}>
+            <option value="">Select preset</option>
+            {Object.keys(vm.filterPresets || {}).map((name) => (
+              <option key={name} value={name}>
+                {name}
+              </option>
+            ))}
+          </select>
+          <button
+            disabled={!selectedPresetName}
+            onClick={() => vm.applyFilterPreset(selectedPresetName)}
+          >
+            Load preset
+          </button>
+          <button
+            disabled={!selectedPresetName}
+            onClick={() => {
+              vm.deleteFilterPreset(selectedPresetName)
+              setSelectedPresetName('')
+            }}
+          >
+            Delete preset
+          </button>
+        </div>
+      </div>
+
       {vm.loading && <LoadingSpinner />}
       {vm.error && <ErrorMessage message={vm.error} />}
 
@@ -55,12 +104,200 @@ export default function DashboardView() {
         </div>
       )}
 
+      <div className="card" style={{ marginBottom: '24px' }}>
+        <h3>SOC Operational Metrics</h3>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, minmax(180px, 1fr))', gap: '10px' }}>
+          <div>
+            <strong>Backlog Open:</strong> {vm.socMetrics.backlogOpen}
+          </div>
+          <div>
+            <strong>Open Rate:</strong> {vm.socMetrics.openRate}%
+          </div>
+          <div>
+            <strong>Critical Open:</strong> {vm.socMetrics.criticalOpen}
+          </div>
+          <div>
+            <strong>MTTD:</strong>{' '}
+            {vm.socMetrics.mttdMinutes == null ? 'N/A' : `${vm.socMetrics.mttdMinutes} min`}
+          </div>
+          <div>
+            <strong>MTTR:</strong>{' '}
+            {vm.socMetrics.mttrMinutes == null ? 'N/A' : `${vm.socMetrics.mttrMinutes} min`}
+          </div>
+          <div>
+            <strong>Total Alerts:</strong> {vm.socMetrics.totalAlerts}
+          </div>
+        </div>
+      </div>
+
       <div style={{ marginBottom: '24px' }}>
         <LevelsChart
           levels={vm.levels || []}
           selectedLevel={vm.levelFilter}
           onLevelChange={vm.setLevelFilter}
         />
+      </div>
+
+      {vm.crossCompanyCampaigns.length > 0 && (
+        <div className="card" style={{ marginBottom: '24px' }}>
+          <h3>Cross-Company Campaigns</h3>
+          <p style={{ marginTop: 0 }}>
+            Shared detection indicators across selected companies.
+          </p>
+          <div className="dashboard-alerts-scroll-container">
+            <table className="sticky-header-table">
+              <thead>
+                <tr>
+                  <th>Severity</th>
+                  <th>Indicator</th>
+                  <th>Affected</th>
+                  <th>Open</th>
+                  <th>Closed</th>
+                  <th>Latest</th>
+                  <th>Companies</th>
+                </tr>
+              </thead>
+              <tbody>
+                {vm.crossCompanyCampaigns.map((item, index) => (
+                  <tr key={`${item.message}-${index}`}>
+                    <td>{item.severity}</td>
+                    <td>{item.message}</td>
+                    <td>
+                      {item.affectedCompanies}/{item.totalSelectedCompanies}
+                    </td>
+                    <td>{item.openAlerts}</td>
+                    <td>{item.closedAlerts}</td>
+                    <td>{String(item.latestCreatedAt ?? '').replace('T', ' ').split('.')[0]}</td>
+                    <td>{(item.companyNames || []).join(', ')}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      )}
+
+      <div className="card" style={{ marginBottom: '24px' }}>
+        <h3>SLA & Aging (Open Alerts)</h3>
+        <p style={{ marginTop: 0 }}>
+          Open: <strong>{vm.alertAgingSummary.totalOpen}</strong> | Under 1h:{' '}
+          <strong>{vm.alertAgingSummary.under1h}</strong> | 1h-4h:{' '}
+          <strong>{vm.alertAgingSummary.between1hAnd4h}</strong> | Over 4h:{' '}
+          <strong>{vm.alertAgingSummary.over4h}</strong>
+        </p>
+        <p style={{ marginTop: 0 }}>
+          SLA breached alerts: <strong>{vm.slaBreachedAlerts.length}</strong>
+        </p>
+        {vm.slaBreachedAlerts.length > 0 && (
+          <div className="dashboard-alerts-scroll-container">
+            <table className="sticky-header-table">
+              <thead>
+                <tr>
+                  <th>ID</th>
+                  <th>Company</th>
+                  <th>Severity</th>
+                  <th>Age (min)</th>
+                  <th>SLA (min)</th>
+                  <th>Message</th>
+                </tr>
+              </thead>
+              <tbody>
+                {vm.slaBreachedAlerts.slice(0, 30).map((alert) => (
+                  <tr key={`sla-${alert.id}`}>
+                    <td>{alert.id}</td>
+                    <td>{alert.companyName ?? '-'}</td>
+                    <td>{alert.severity}</td>
+                    <td>{alert.ageMinutes}</td>
+                    <td>{alert.slaMinutes}</td>
+                    <td>{alert.message}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+        <h3>Case Management</h3>
+        <div style={{ display: 'grid', gap: '8px', marginBottom: '12px' }}>
+          <input
+            type="text"
+            placeholder="Case title"
+            value={caseTitle}
+            onChange={(event) => setCaseTitle(event.target.value)}
+          />
+          <input
+            type="text"
+            placeholder="Case owner"
+            value={caseOwner}
+            onChange={(event) => setCaseOwner(event.target.value)}
+          />
+          <textarea
+            placeholder="Case description"
+            value={caseDescription}
+            onChange={(event) => setCaseDescription(event.target.value)}
+          />
+          <p style={{ margin: 0 }}>
+            Selected alerts for case: <strong>{selectedAlertIdsForCase.length}</strong>
+          </p>
+          <button
+            disabled={!caseTitle.trim()}
+            onClick={async () => {
+              await vm.createCase({
+                title: caseTitle,
+                description: caseDescription,
+                owner: caseOwner,
+                alertIds: selectedAlertIdsForCase
+              })
+              setCaseTitle('')
+              setCaseDescription('')
+              setCaseOwner('')
+              setSelectedAlertIdsForCase([])
+            }}
+          >
+            Create case from selection
+          </button>
+        </div>
+        <div className="dashboard-alerts-scroll-container">
+          <table className="sticky-header-table">
+            <thead>
+              <tr>
+                <th>ID</th>
+                <th>Title</th>
+                <th>Owner</th>
+                <th>Status</th>
+                <th>Alerts</th>
+                <th>Updated</th>
+                <th>Action</th>
+              </tr>
+            </thead>
+            <tbody>
+              {(vm.cases || []).map((item) => (
+                <tr key={item.id}>
+                  <td>{item.id}</td>
+                  <td>{item.title}</td>
+                  <td>{item.owner ?? '-'}</td>
+                  <td>{item.status}</td>
+                  <td>{(item.alertIds || []).length}</td>
+                  <td>{String(item.updatedAt ?? '').replace('T', ' ').split('.')[0]}</td>
+                  <td>
+                    <select
+                      value={item.status}
+                      onChange={(event) => vm.updateCaseStatus(item.id, event.target.value)}
+                    >
+                      <option value="OPEN">OPEN</option>
+                      <option value="IN_PROGRESS">IN_PROGRESS</option>
+                      <option value="RESOLVED">RESOLVED</option>
+                    </select>
+                  </td>
+                </tr>
+              ))}
+              {(vm.cases || []).length === 0 && (
+                <tr>
+                  <td colSpan={7}>No cases created yet.</td>
+                </tr>
+              )}
+            </tbody>
+          </table>
+        </div>
       </div>
 
       <div className="card" style={{ marginBottom: '24px' }}>
@@ -165,7 +402,11 @@ export default function DashboardView() {
             </p>
 
             <div className="dashboard-logs-scroll-container">
-              <LogsTable logs={vm.filteredLogs} />
+              <LogsTable
+                logs={vm.filteredLogs}
+                onPivotIp={vm.pivotToIp}
+                onPivotSource={vm.pivotToSource}
+              />
             </div>
           </>
         )}
@@ -300,14 +541,84 @@ export default function DashboardView() {
                   ))}
                 </select>
               </div>
+
+              <select value={vm.alertSortMode} onChange={(e) => vm.setAlertSortMode(e.target.value)}>
+                <option value="RISK_DESC">Sort: highest risk first</option>
+                <option value="NEWEST">Sort: newest first</option>
+                <option value="OLDEST">Sort: oldest first</option>
+              </select>
             </div>
 
             <p style={{ marginTop: '10px', marginBottom: '10px' }}>
               Showing <strong>{vm.filteredAlerts.length}</strong> alerts
             </p>
 
+            <div className="card" style={{ marginBottom: '12px' }}>
+              <h3>Grouped Alerts (Dedup View)</h3>
+              <div className="dashboard-alerts-scroll-container">
+                <table className="sticky-header-table">
+                  <thead>
+                    <tr>
+                      <th>Correlation</th>
+                      <th>Severity</th>
+                      <th>Total</th>
+                      <th>Open</th>
+                      <th>Latest</th>
+                      <th>Action</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {vm.groupedAlerts.map((group) => (
+                      <tr key={group.key}>
+                        <td>{group.key}</td>
+                        <td>{group.severity}</td>
+                        <td>{group.total}</td>
+                        <td>{group.open}</td>
+                        <td>{String(group.latestCreatedAt ?? '').replace('T', ' ').split('.')[0]}</td>
+                        <td>
+                          <button
+                            disabled={group.open === 0}
+                            onClick={() => {
+                              const openIds = vm.filteredAlerts
+                                .filter(
+                                  (alert) => group.alertIds.includes(alert.id) && alert.status === 'OPEN'
+                                )
+                                .map((alert) => alert.id)
+
+                              vm.bulkCloseAlerts(openIds)
+                            }}
+                          >
+                            Close open in group
+                          </button>
+                        </td>
+                      </tr>
+                    ))}
+                    {vm.groupedAlerts.length === 0 && (
+                      <tr>
+                        <td colSpan={6}>No grouped alerts for current filters.</td>
+                      </tr>
+                    )}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+
             <div className="dashboard-alerts-scroll-container">
-              <AlertsTable alerts={vm.filteredAlerts || []} onCloseAlert={vm.closeAlert} />
+              <AlertsTable
+                alerts={vm.filteredAlerts || []}
+                logs={vm.filteredLogs || []}
+                onCloseAlert={vm.closeAlert}
+                onUpdateWorkflow={vm.updateAlertWorkflow}
+                onPivotMessage={vm.pivotFromAlertMessage}
+                selectedAlertIds={selectedAlertIdsForCase}
+                onToggleAlertSelection={(alertId) => {
+                  setSelectedAlertIdsForCase((current) =>
+                    current.includes(alertId)
+                      ? current.filter((id) => id !== alertId)
+                      : [...current, alertId]
+                  )
+                }}
+              />
             </div>
           </>
         )}

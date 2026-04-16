@@ -3,6 +3,28 @@ import { companyService } from '../services/companyService'
 import { dashboardService } from '../services/dashboardService'
 import { alertService } from '../services/alertService'
 import { logService } from '../services/logService'
+import { caseService } from '../services/caseService'
+
+const FILTER_PRESETS_STORAGE_KEY = 'siem.dashboard.filterPresets'
+
+function readFilterPresets() {
+  try {
+    const raw = window.localStorage.getItem(FILTER_PRESETS_STORAGE_KEY)
+    if (!raw) {
+      return {}
+    }
+
+    const parsed = JSON.parse(raw)
+    return parsed && typeof parsed === 'object' ? parsed : {}
+  } catch (error) {
+    console.error('Failed to read filter presets', error)
+    return {}
+  }
+}
+
+function writeFilterPresets(nextPresets) {
+  window.localStorage.setItem(FILTER_PRESETS_STORAGE_KEY, JSON.stringify(nextPresets))
+}
 
 function formatDateOnly(date) {
   const year = date.getFullYear()
@@ -47,6 +69,55 @@ function getHourFromTimestamp(timestamp) {
   return date.getHours()
 }
 
+function calculateRiskScore(alert, companiesAffectedCount) {
+  const severityWeight = {
+    CRITICAL: 70,
+    WARNING: 45,
+    INFO: 25
+  }
+
+  const base = severityWeight[alert.severity] ?? 20
+  const statusBonus = alert.status === 'OPEN' ? 20 : 0
+  const crossCompanyBonus = companiesAffectedCount > 1 ? 10 : 0
+
+  const createdAt = new Date(alert.createdAt)
+  const ageMinutes = Number.isNaN(createdAt.getTime())
+    ? Number.MAX_SAFE_INTEGER
+    : Math.floor((Date.now() - createdAt.getTime()) / 60000)
+  const freshnessBonus = ageMinutes <= 60 ? 10 : 0
+
+  return Math.max(0, Math.min(100, base + statusBonus + crossCompanyBonus + freshnessBonus))
+}
+
+function getMinutesSince(dateValue) {
+  const date = new Date(dateValue)
+  if (Number.isNaN(date.getTime())) {
+    return 0
+  }
+
+  return Math.floor((Date.now() - date.getTime()) / 60000)
+}
+
+function getSlaMinutesBySeverity(severity) {
+  if (severity === 'CRITICAL') {
+    return 60
+  }
+  if (severity === 'WARNING') {
+    return 240
+  }
+  return 720
+}
+
+function getMinutesBetween(startValue, endValue) {
+  const start = new Date(startValue)
+  const end = new Date(endValue)
+  if (Number.isNaN(start.getTime()) || Number.isNaN(end.getTime())) {
+    return null
+  }
+
+  return Math.max(0, Math.floor((end.getTime() - start.getTime()) / 60000))
+}
+
 export function useDashboardViewModel() {
   const [companies, setCompanies] = useState([])
   const [selectedCompanyId, setSelectedCompanyId] = useState('')
@@ -55,6 +126,8 @@ export function useDashboardViewModel() {
   const [logs, setLogs] = useState([])
   const [alerts, setAlerts] = useState([])
   const [alertsForCorrelation, setAlertsForCorrelation] = useState([])
+  const [cases, setCases] = useState([])
+  const [crossCompanyCampaigns, setCrossCompanyCampaigns] = useState([])
   const [selectedAffectedCompanyIds, setSelectedAffectedCompanyIds] = useState([])
   const [affectedCompaniesFilterMode, setAffectedCompaniesFilterMode] = useState('ALL_ALERTS')
   const [affectedAlertsViewMode, setAffectedAlertsViewMode] = useState('ANY_SELECTED')
@@ -73,6 +146,8 @@ export function useDashboardViewModel() {
   const [logHourEndFilter, setLogHourEndFilter] = useState('ALL')
   const [alertHourStartFilter, setAlertHourStartFilter] = useState('ALL')
   const [alertHourEndFilter, setAlertHourEndFilter] = useState('ALL')
+  const [alertSortMode, setAlertSortMode] = useState('RISK_DESC')
+  const [filterPresets, setFilterPresets] = useState(readFilterPresets)
 
   const defaults = getDefaultDateRange()
   const [startDate, setStartDate] = useState(defaults.startDate)
@@ -106,6 +181,16 @@ export function useDashboardViewModel() {
     }
   }, [selectedCompanyId])
 
+  const loadCases = useCallback(async () => {
+    try {
+      const data = await caseService.getAll()
+      setCases(data ?? [])
+    } catch (err) {
+      setError('Failed to load cases')
+      console.error(err)
+    }
+  }, [])
+
   const loadDashboardData = useCallback(async () => {
     if (selectedCompanyIds.length === 0) {
       setSummary(null)
@@ -113,6 +198,7 @@ export function useDashboardViewModel() {
       setLogs([])
       setAlerts([])
       setAlertsForCorrelation([])
+      setCrossCompanyCampaigns([])
       return
     }
 
@@ -185,11 +271,17 @@ export function useDashboardViewModel() {
         correlationAlerts = [...mergedAlerts, ...otherCompanyAlerts.flatMap((items) => items ?? [])]
       }
 
+      const campaigns =
+        selectedCompanyIds.length > 1
+          ? await alertService.getCrossCompany(selectedCompanyIds.map((id) => Number(id)), 2)
+          : []
+
       setSummary(mergedSummary)
       setLevels(mergedLevels)
       setLogs(mergedLogs)
       setAlerts(mergedAlerts)
       setAlertsForCorrelation(correlationAlerts)
+      setCrossCompanyCampaigns(campaigns ?? [])
     } catch (err) {
       setError('Failed to load dashboard data')
       console.error(err)
@@ -198,12 +290,42 @@ export function useDashboardViewModel() {
     }
   }, [selectedCompanyIds, companies, isAllCompaniesSelected, startDate, endDate])
 
-  const closeAlert = async (alertId) => {
+  const closeAlert = async (alertId, payload) => {
     try {
-      await alertService.closeAlert(alertId)
+      await alertService.closeAlert(alertId, payload)
       await loadDashboardData()
     } catch (err) {
       setError('Failed to close alert')
+      console.error(err)
+    }
+  }
+
+  const updateAlertWorkflow = async (alertId, payload) => {
+    try {
+      await alertService.updateWorkflow(alertId, payload)
+      await loadDashboardData()
+    } catch (err) {
+      setError('Failed to update alert workflow')
+      console.error(err)
+    }
+  }
+
+  const createCase = async (payload) => {
+    try {
+      await caseService.create(payload)
+      await loadCases()
+    } catch (err) {
+      setError('Failed to create case')
+      console.error(err)
+    }
+  }
+
+  const updateCaseStatus = async (caseId, status) => {
+    try {
+      await caseService.updateStatus(caseId, status)
+      await loadCases()
+    } catch (err) {
+      setError('Failed to update case status')
       console.error(err)
     }
   }
@@ -297,7 +419,7 @@ export function useDashboardViewModel() {
       keyToCompanies.set(key, companiesForKey)
     })
 
-    return nextAlerts.map((alert) => {
+    const alertsWithRisk = nextAlerts.map((alert) => {
       const correlationKey = buildCorrelationKey(alert)
       const affectedCompaniesMap = keyToCompanies.get(correlationKey) || new Map()
       const companiesAffectedCount = affectedCompaniesMap.size || 1
@@ -309,9 +431,27 @@ export function useDashboardViewModel() {
 
       return {
         ...alert,
+        riskScore: calculateRiskScore(alert, companiesAffectedCount),
         sharedTypeLabel,
         affectedCompanyNames
       }
+    })
+
+    return [...alertsWithRisk].sort((left, right) => {
+      if (alertSortMode === 'OLDEST') {
+        return new Date(left.createdAt).getTime() - new Date(right.createdAt).getTime()
+      }
+
+      if (alertSortMode === 'NEWEST') {
+        return new Date(right.createdAt).getTime() - new Date(left.createdAt).getTime()
+      }
+
+      const scoreDiff = (right.riskScore ?? 0) - (left.riskScore ?? 0)
+      if (scoreDiff !== 0) {
+        return scoreDiff
+      }
+
+      return new Date(right.createdAt).getTime() - new Date(left.createdAt).getTime()
     })
   }, [
     alerts,
@@ -323,7 +463,8 @@ export function useDashboardViewModel() {
     affectedCompaniesFilterMode,
     affectedAlertsViewMode,
     selectedAffectedCompanyIds,
-    selectedCompanyIds
+    selectedCompanyIds,
+    alertSortMode
   ])
 
   const availableLogSources = useMemo(() => {
@@ -444,6 +585,230 @@ export function useDashboardViewModel() {
     logHourEndFilter
   ])
 
+  const applyPresetData = useCallback((preset) => {
+    if (!preset) {
+      return
+    }
+
+    setSelectedCompanyId(preset.selectedCompanyId ?? 'ALL')
+    setStartDate(preset.startDate ?? startDate)
+    setEndDate(preset.endDate ?? endDate)
+
+    setAlertStatusFilter(preset.alertStatusFilter ?? 'ALL')
+    setAlertHourStartFilter(preset.alertHourStartFilter ?? 'ALL')
+    setAlertHourEndFilter(preset.alertHourEndFilter ?? 'ALL')
+
+    setLogLevelFilter(preset.logLevelFilter ?? 'ALL')
+    setLogSourceFilter(preset.logSourceFilter ?? 'ALL')
+    setLogSourceTypeFilter(preset.logSourceTypeFilter ?? 'ALL')
+    setLogAlertLinkFilter(preset.logAlertLinkFilter ?? 'ALL')
+    setLogHourStartFilter(preset.logHourStartFilter ?? 'ALL')
+    setLogHourEndFilter(preset.logHourEndFilter ?? 'ALL')
+    setLogIpFilter(preset.logIpFilter ?? '')
+    setLogSearchFilter(preset.logSearchFilter ?? '')
+  }, [endDate, startDate])
+
+  const saveCurrentFilterPreset = useCallback((name) => {
+    const safeName = String(name ?? '').trim()
+    if (!safeName) {
+      return
+    }
+
+    const nextPresets = {
+      ...filterPresets,
+      [safeName]: {
+        selectedCompanyId,
+        startDate,
+        endDate,
+        alertStatusFilter,
+        alertHourStartFilter,
+        alertHourEndFilter,
+        logLevelFilter,
+        logSourceFilter,
+        logSourceTypeFilter,
+        logAlertLinkFilter,
+        logHourStartFilter,
+        logHourEndFilter,
+        logIpFilter,
+        logSearchFilter
+      }
+    }
+
+    setFilterPresets(nextPresets)
+    writeFilterPresets(nextPresets)
+  }, [
+    filterPresets,
+    selectedCompanyId,
+    startDate,
+    endDate,
+    alertStatusFilter,
+    alertHourStartFilter,
+    alertHourEndFilter,
+    logLevelFilter,
+    logSourceFilter,
+    logSourceTypeFilter,
+    logAlertLinkFilter,
+    logHourStartFilter,
+    logHourEndFilter,
+    logIpFilter,
+    logSearchFilter
+  ])
+
+  const applyFilterPreset = useCallback((name) => {
+    const preset = filterPresets[name]
+    applyPresetData(preset)
+  }, [applyPresetData, filterPresets])
+
+  const deleteFilterPreset = useCallback((name) => {
+    const nextPresets = { ...filterPresets }
+    delete nextPresets[name]
+    setFilterPresets(nextPresets)
+    writeFilterPresets(nextPresets)
+  }, [filterPresets])
+
+  const pivotToIp = useCallback((ip) => {
+    if (!ip) {
+      return
+    }
+
+    setLogIpFilter(ip)
+  }, [])
+
+  const pivotToSource = useCallback((sourceName) => {
+    if (!sourceName) {
+      return
+    }
+
+    setLogSourceFilter(sourceName)
+  }, [])
+
+  const pivotFromAlertMessage = useCallback((message) => {
+    if (!message) {
+      return
+    }
+
+    setLogSearchFilter(String(message).slice(0, 80))
+  }, [])
+
+  const groupedAlerts = useMemo(() => {
+    const groups = new Map()
+
+    filteredAlerts.forEach((alert) => {
+      const key = alert.correlationKey || buildCorrelationKey(alert)
+      const current = groups.get(key) || {
+        key,
+        severity: alert.severity,
+        message: alert.message,
+        total: 0,
+        open: 0,
+        latestCreatedAt: alert.createdAt,
+        alertIds: []
+      }
+
+      current.total += 1
+      if (alert.status === 'OPEN') {
+        current.open += 1
+      }
+      if (new Date(alert.createdAt).getTime() > new Date(current.latestCreatedAt).getTime()) {
+        current.latestCreatedAt = alert.createdAt
+      }
+      current.alertIds.push(alert.id)
+
+      groups.set(key, current)
+    })
+
+    return Array.from(groups.values()).sort((a, b) => b.open - a.open || b.total - a.total)
+  }, [filteredAlerts])
+
+  const bulkCloseAlerts = async (alertIds) => {
+    try {
+      await Promise.all(alertIds.map((alertId) => alertService.closeAlert(alertId)))
+      await loadDashboardData()
+    } catch (err) {
+      setError('Failed to bulk close alerts')
+      console.error(err)
+    }
+  }
+
+  const alertAgingSummary = useMemo(() => {
+    const openAlerts = filteredAlerts.filter((alert) => alert.status === 'OPEN')
+    const buckets = {
+      under1h: 0,
+      between1hAnd4h: 0,
+      over4h: 0
+    }
+
+    openAlerts.forEach((alert) => {
+      const ageMinutes = getMinutesSince(alert.createdAt)
+      if (ageMinutes < 60) {
+        buckets.under1h += 1
+      } else if (ageMinutes < 240) {
+        buckets.between1hAnd4h += 1
+      } else {
+        buckets.over4h += 1
+      }
+    })
+
+    return {
+      totalOpen: openAlerts.length,
+      ...buckets
+    }
+  }, [filteredAlerts])
+
+  const slaBreachedAlerts = useMemo(
+    () =>
+      filteredAlerts
+        .filter((alert) => alert.status === 'OPEN')
+        .map((alert) => {
+          const ageMinutes = getMinutesSince(alert.createdAt)
+          const slaMinutes = getSlaMinutesBySeverity(alert.severity)
+          return {
+            ...alert,
+            ageMinutes,
+            slaMinutes,
+            isBreached: ageMinutes > slaMinutes
+          }
+        })
+        .filter((alert) => alert.isBreached)
+        .sort((a, b) => b.ageMinutes - a.ageMinutes),
+    [filteredAlerts]
+  )
+
+  const socMetrics = useMemo(() => {
+    const openAlerts = filteredAlerts.filter((alert) => alert.status === 'OPEN')
+    const closedAlerts = filteredAlerts.filter((alert) => alert.status === 'CLOSED')
+    const totalAlerts = filteredAlerts.length
+
+    const mttrSamples = closedAlerts
+      .map((alert) => getMinutesBetween(alert.createdAt, alert.closedAt))
+      .filter((value) => value != null)
+
+    const logsById = new Map(logs.map((log) => [String(log.id), log]))
+    const mttdSamples = filteredAlerts
+      .map((alert) => {
+        const sourceLog = logsById.get(String(alert.logId))
+        if (!sourceLog) {
+          return null
+        }
+        return getMinutesBetween(sourceLog.timestamp, alert.createdAt)
+      })
+      .filter((value) => value != null)
+
+    const average = (items) =>
+      items.length === 0
+        ? null
+        : Math.round(items.reduce((acc, value) => acc + value, 0) / items.length)
+
+    return {
+      backlogOpen: openAlerts.length,
+      totalAlerts,
+      openRate: totalAlerts === 0 ? 0 : Math.round((openAlerts.length / totalAlerts) * 100),
+      criticalOpen: openAlerts.filter((alert) => alert.severity === 'CRITICAL').length,
+      mttdMinutes: average(mttdSamples),
+      mttrMinutes: average(mttrSamples)
+    }
+  }, [filteredAlerts, logs])
+
   useEffect(() => {
     if (!isAllCompaniesSelected) {
       setSelectedAffectedCompanyIds([])
@@ -460,6 +825,10 @@ export function useDashboardViewModel() {
   useEffect(() => {
     loadCompanies()
   }, [loadCompanies])
+
+  useEffect(() => {
+    loadCases()
+  }, [loadCases])
 
   useEffect(() => {
     loadDashboardData()
@@ -484,10 +853,20 @@ export function useDashboardViewModel() {
     availableLogSources,
     availableLogSourceTypes,
     filteredLogs,
+    groupedAlerts,
+    alertAgingSummary,
+    slaBreachedAlerts,
+    socMetrics,
+    cases,
+    crossCompanyCampaigns,
     loading,
     error,
     reload: loadDashboardData,
     closeAlert,
+    updateAlertWorkflow,
+    bulkCloseAlerts,
+    createCase,
+    updateCaseStatus,
     alertStatusFilter,
     setAlertStatusFilter,
     selectedAffectedCompanyIds,
@@ -517,7 +896,16 @@ export function useDashboardViewModel() {
     alertHourStartFilter,
     setAlertHourStartFilter,
     alertHourEndFilter,
-    setAlertHourEndFilter
+    setAlertHourEndFilter,
+    alertSortMode,
+    setAlertSortMode,
+    filterPresets,
+    saveCurrentFilterPreset,
+    applyFilterPreset,
+    deleteFilterPreset,
+    pivotToIp,
+    pivotToSource,
+    pivotFromAlertMessage
   }
 }
 

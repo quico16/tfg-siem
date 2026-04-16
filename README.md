@@ -126,7 +126,7 @@ cd backend
 ./mvnw spring-boot:run
 ```
 
-Backend: `http://localhost:8080`
+Backend: `http://localhost:10000`
 
 ### 4. Arrencar el frontend
 
@@ -142,7 +142,7 @@ Frontend: `http://localhost:5173`
 
 Vite est� configurat per redirigir les crides API:
 
-- `/api` -> `http://localhost:8080`
+- `/api` -> `http://localhost:10000`
 
 Aix� evita problemes de CORS durant el desenvolupament local.
 

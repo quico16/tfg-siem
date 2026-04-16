@@ -1,7 +1,9 @@
 package com.tfg.siem.service;
 
 import com.tfg.siem.dto.AlertResponse;
+import com.tfg.siem.dto.CloseAlertRequest;
 import com.tfg.siem.dto.CrossCompanyAlertResponse;
+import com.tfg.siem.dto.UpdateAlertWorkflowRequest;
 import com.tfg.siem.exception.BadRequestException;
 import com.tfg.siem.exception.ResourceNotFoundException;
 import com.tfg.siem.model.Alert;
@@ -462,12 +464,17 @@ public class AlertService {
         response.setCorrelationKey(alert.getCorrelationKey());
         response.setMessage(alert.getMessage());
         response.setStatus(alert.getStatus());
+        response.setOwner(alert.getOwner());
+        response.setStatusUpdatedAt(alert.getStatusUpdatedAt());
+        response.setResolutionType(alert.getResolutionType());
+        response.setResolutionNote(alert.getResolutionNote());
         response.setCreatedAt(alert.getCreatedAt());
+        response.setClosedAt(alert.getClosedAt());
         return response;
     }
 
     @Transactional
-    public AlertResponse closeAlert(Long alertId) {
+    public AlertResponse closeAlert(Long alertId, CloseAlertRequest request) {
         Alert alert = alertRepository.findById(alertId)
                 .orElseThrow(() -> new ResourceNotFoundException("Alert not found with id: " + alertId));
 
@@ -476,8 +483,29 @@ public class AlertService {
         }
 
         alert.setStatus(AlertStatus.CLOSED);
+        if (request != null) {
+            alert.setResolutionType(request.getResolutionType());
+            alert.setResolutionNote(request.getResolutionNote());
+        }
         Alert savedAlert = alertRepository.save(alert);
 
+        return mapToResponse(savedAlert);
+    }
+
+    @Transactional
+    public AlertResponse updateAlertWorkflow(Long alertId, UpdateAlertWorkflowRequest request) {
+        Alert alert = alertRepository.findById(alertId)
+                .orElseThrow(() -> new ResourceNotFoundException("Alert not found with id: " + alertId));
+
+        if (request.getStatus() != null) {
+            alert.setStatus(request.getStatus());
+        }
+
+        if (request.getOwner() != null) {
+            alert.setOwner(request.getOwner().isBlank() ? null : request.getOwner());
+        }
+
+        Alert savedAlert = alertRepository.save(alert);
         return mapToResponse(savedAlert);
     }
 
