@@ -21,6 +21,68 @@ export default function DashboardView() {
   const [caseDescription, setCaseDescription] = useState('')
   const [caseOwner, setCaseOwner] = useState('')
 
+  const renderGlobalCompanyScopeFilter = () => (
+    <div
+      className="card"
+      style={{
+        marginBottom: '24px',
+        padding: '12px',
+        border: '1px solid #d5d5d5',
+        borderRadius: '8px'
+      }}
+    >
+      <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '10px' }}>
+        <strong>Global Company Scope</strong>
+        <select
+          value={vm.affectedCompaniesFilterMode}
+          onChange={(e) => vm.setAffectedCompaniesFilterMode(e.target.value)}
+        >
+          <option value="ALL_ALERTS">Use all selected companies</option>
+          <option value="SELECT_COMPANIES">Filter by selected companies</option>
+        </select>
+
+        {vm.affectedCompaniesFilterMode === 'SELECT_COMPANIES' && (
+          <select
+            value={vm.affectedAlertsViewMode}
+            onChange={(e) => vm.setAffectedAlertsViewMode(e.target.value)}
+          >
+            <option value="ANY_SELECTED">Show all alerts for selected companies</option>
+            <option value="COMMON_SELECTED">Show only alerts shared by all selected companies</option>
+          </select>
+        )}
+      </div>
+
+      {vm.affectedCompaniesFilterMode === 'SELECT_COMPANIES' && (
+        <div
+          style={{
+            display: 'grid',
+            gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))',
+            gap: '8px'
+          }}
+        >
+          {vm.availableAlertCompanies.map((company) => (
+            <label key={company.id} style={{ display: 'flex', alignItems: 'center', gap: '8px', margin: 0 }}>
+              <input
+                type="checkbox"
+                checked={vm.selectedAffectedCompanyIds.includes(company.id)}
+                onChange={(e) => {
+                  if (e.target.checked) {
+                    vm.setSelectedAffectedCompanyIds([...vm.selectedAffectedCompanyIds, company.id])
+                  } else {
+                    vm.setSelectedAffectedCompanyIds(
+                      vm.selectedAffectedCompanyIds.filter((id) => id !== company.id)
+                    )
+                  }
+                }}
+              />
+              {company.name}
+            </label>
+          ))}
+        </div>
+      )}
+    </div>
+  )
+
   return (
     <div style={{ padding: '24px' }}>
       <h1>Dashboard</h1>
@@ -264,6 +326,8 @@ export default function DashboardView() {
         </div>
       </div>
 
+      {vm.isAllCompaniesSelected && renderGlobalCompanyScopeFilter()}
+
       <div className="card" style={{ marginBottom: '24px' }}>
         <div
           className="section-header-row section-fold-header"
@@ -399,78 +463,6 @@ export default function DashboardView() {
 
         {showAlerts && (
           <>
-            {vm.isAllCompaniesSelected && (
-              <div
-                style={{
-                  marginTop: '12px',
-                  marginBottom: '12px',
-                  padding: '12px',
-                  border: '1px solid #d5d5d5',
-                  borderRadius: '8px'
-                }}
-              >
-                <div
-                  style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '10px' }}
-                >
-                  <strong>Affected Companies Filter</strong>
-                  <select
-                    value={vm.affectedCompaniesFilterMode}
-                    onChange={(e) => vm.setAffectedCompaniesFilterMode(e.target.value)}
-                  >
-                    <option value="ALL_ALERTS">Show all alerts</option>
-                    <option value="SELECT_COMPANIES">Filter by selected companies</option>
-                  </select>
-
-                  {vm.affectedCompaniesFilterMode === 'SELECT_COMPANIES' && (
-                    <select
-                      value={vm.affectedAlertsViewMode}
-                      onChange={(e) => vm.setAffectedAlertsViewMode(e.target.value)}
-                    >
-                      <option value="ANY_SELECTED">Show all alerts for selected companies</option>
-                      <option value="COMMON_SELECTED">
-                        Show only alerts shared by all selected companies
-                      </option>
-                    </select>
-                  )}
-                </div>
-
-                {vm.affectedCompaniesFilterMode === 'SELECT_COMPANIES' && (
-                  <div
-                    style={{
-                      display: 'grid',
-                      gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))',
-                      gap: '8px'
-                    }}
-                  >
-                    {vm.availableAlertCompanies.map((company) => (
-                      <label
-                        key={company.id}
-                        style={{ display: 'flex', alignItems: 'center', gap: '8px', margin: 0 }}
-                      >
-                        <input
-                          type="checkbox"
-                          checked={vm.selectedAffectedCompanyIds.includes(company.id)}
-                          onChange={(e) => {
-                            if (e.target.checked) {
-                              vm.setSelectedAffectedCompanyIds([
-                                ...vm.selectedAffectedCompanyIds,
-                                company.id
-                              ])
-                            } else {
-                              vm.setSelectedAffectedCompanyIds(
-                                vm.selectedAffectedCompanyIds.filter((id) => id !== company.id)
-                              )
-                            }
-                          }}
-                        />
-                        {company.name}
-                      </label>
-                    ))}
-                  </div>
-                )}
-              </div>
-            )}
-
             <div className="logs-filters-grid" style={{ marginTop: '12px' }}>
               <select
                 value={vm.alertStatusFilter}

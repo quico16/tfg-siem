@@ -167,6 +167,17 @@ export function useDashboardViewModel() {
     return [selectedCompanyId]
   }, [companies, isAllCompaniesSelected, selectedCompanyId])
 
+  const isGlobalCompanyScopeEnabled =
+    isAllCompaniesSelected && affectedCompaniesFilterMode === 'SELECT_COMPANIES'
+
+  const scopedCompanyIds = useMemo(() => {
+    if (!isGlobalCompanyScopeEnabled) {
+      return selectedCompanyIds
+    }
+
+    return selectedAffectedCompanyIds
+  }, [isGlobalCompanyScopeEnabled, selectedAffectedCompanyIds, selectedCompanyIds])
+
   const loadCompanies = useCallback(async () => {
     try {
       const data = await companyService.getAll()
@@ -192,7 +203,7 @@ export function useDashboardViewModel() {
   }, [])
 
   const loadDashboardData = useCallback(async () => {
-    if (selectedCompanyIds.length === 0) {
+    if (scopedCompanyIds.length === 0) {
       setSummary(null)
       setLevels([])
       setLogs([])
@@ -207,7 +218,7 @@ export function useDashboardViewModel() {
 
     try {
       const resultsByCompany = await Promise.all(
-        selectedCompanyIds.map(async (companyId) => {
+        scopedCompanyIds.map(async (companyId) => {
           const [summaryData, levelsData, alertsData, logsData] = await Promise.all([
             dashboardService.getSummary(companyId),
             dashboardService.getLevels(companyId),
@@ -272,8 +283,8 @@ export function useDashboardViewModel() {
       }
 
       const campaigns =
-        selectedCompanyIds.length > 1
-          ? await alertService.getCrossCompany(selectedCompanyIds.map((id) => Number(id)), 2)
+        scopedCompanyIds.length > 1
+          ? await alertService.getCrossCompany(scopedCompanyIds.map((id) => Number(id)), 2)
           : []
 
       setSummary(mergedSummary)
@@ -288,7 +299,7 @@ export function useDashboardViewModel() {
     } finally {
       setLoading(false)
     }
-  }, [selectedCompanyIds, companies, isAllCompaniesSelected, startDate, endDate])
+  }, [scopedCompanyIds, selectedCompanyIds, companies, isAllCompaniesSelected, startDate, endDate])
 
   const closeAlert = async (alertId, payload) => {
     try {
@@ -400,11 +411,7 @@ export function useDashboardViewModel() {
     }
 
     const scopeCompanyIds =
-      isAllCompaniesSelected &&
-      affectedCompaniesFilterMode === 'SELECT_COMPANIES' &&
-      selectedAffectedCompanyIds.length > 0
-        ? selectedAffectedCompanyIds
-        : selectedCompanyIds
+      scopedCompanyIds.length > 0 ? scopedCompanyIds : selectedCompanyIds
 
     const scopeCompanyCount = Math.max(scopeCompanyIds.length, 1)
 
@@ -464,6 +471,7 @@ export function useDashboardViewModel() {
     affectedAlertsViewMode,
     selectedAffectedCompanyIds,
     selectedCompanyIds,
+    scopedCompanyIds,
     alertSortMode
   ])
 
@@ -839,6 +847,8 @@ export function useDashboardViewModel() {
     selectedCompanyId,
     setSelectedCompanyId,
     selectedCompanyIds,
+    scopedCompanyIds,
+    isGlobalCompanyScopeEnabled,
     isAllCompaniesSelected,
     startDate,
     endDate,
