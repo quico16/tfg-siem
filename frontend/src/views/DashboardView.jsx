@@ -328,14 +328,13 @@ export default function DashboardView() {
         </div>
       </div>
 
-      {vm.isAllCompaniesSelected &&
-        renderCompanyScopeFilter({
-          title: 'Statistics Company Scope',
-          mode: vm.statsCompaniesFilterMode,
-          onModeChange: vm.setStatsCompaniesFilterMode,
-          selectedCompanyIds: vm.selectedStatsCompanyIds,
-          onSelectedCompanyIdsChange: vm.setSelectedStatsCompanyIds
-        })}
+      {renderCompanyScopeFilter({
+        title: 'Statistics Company Scope',
+        mode: vm.statsCompaniesFilterMode,
+        onModeChange: vm.setStatsCompaniesFilterMode,
+        selectedCompanyIds: vm.selectedStatsCompanyIds,
+        onSelectedCompanyIdsChange: vm.setSelectedStatsCompanyIds
+      })}
 
       <div className="card" style={{ marginBottom: '24px' }}>
         <div
@@ -356,14 +355,13 @@ export default function DashboardView() {
 
         {showLogs && (
           <>
-            {vm.isAllCompaniesSelected &&
-              renderCompanyScopeFilter({
-                title: 'Logs Company Scope',
-                mode: vm.logCompaniesFilterMode,
-                onModeChange: vm.setLogCompaniesFilterMode,
-                selectedCompanyIds: vm.selectedLogCompanyIds,
-                onSelectedCompanyIdsChange: vm.setSelectedLogCompanyIds
-              })}
+            {renderCompanyScopeFilter({
+              title: 'Logs Company Scope',
+              mode: vm.logCompaniesFilterMode,
+              onModeChange: vm.setLogCompaniesFilterMode,
+              selectedCompanyIds: vm.selectedLogCompanyIds,
+              onSelectedCompanyIdsChange: vm.setSelectedLogCompanyIds
+            })}
 
             <div className="logs-filters-grid" style={{ marginTop: '12px' }}>
               <select value={vm.logLevelFilter} onChange={(e) => vm.setLogLevelFilter(e.target.value)}>
@@ -481,15 +479,14 @@ export default function DashboardView() {
 
         {showAlerts && (
           <>
-            {vm.isAllCompaniesSelected &&
-              renderCompanyScopeFilter({
-                title: 'Alerts Company Scope',
-                mode: vm.affectedCompaniesFilterMode,
-                onModeChange: vm.setAffectedCompaniesFilterMode,
-                selectedCompanyIds: vm.selectedAffectedCompanyIds,
-                onSelectedCompanyIdsChange: vm.setSelectedAffectedCompanyIds,
-                showCommonToggle: true
-              })}
+            {renderCompanyScopeFilter({
+              title: 'Alerts Company Scope',
+              mode: vm.affectedCompaniesFilterMode,
+              onModeChange: vm.setAffectedCompaniesFilterMode,
+              selectedCompanyIds: vm.selectedAffectedCompanyIds,
+              onSelectedCompanyIdsChange: vm.setSelectedAffectedCompanyIds,
+              showCommonToggle: true
+            })}
 
             <div className="logs-filters-grid" style={{ marginTop: '12px' }}>
               <select

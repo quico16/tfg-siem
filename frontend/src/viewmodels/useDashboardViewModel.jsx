@@ -117,11 +117,12 @@ function getMinutesBetween(startValue, endValue) {
   return Math.max(0, Math.floor((end.getTime() - start.getTime()) / 60000))
 }
 
-function resolveScopedCompanyIds(baseCompanyIds, mode, selectedIds, isAllCompaniesSelected) {
-  if (!isAllCompaniesSelected || mode !== 'SELECT_COMPANIES') {
+function resolveScopedCompanyIds(baseCompanyIds, mode, selectedIds) {
+  if (mode !== 'SELECT_COMPANIES') {
     return baseCompanyIds
   }
-  return selectedIds
+
+  return selectedIds.length > 0 ? selectedIds : baseCompanyIds
 }
 
 export function useDashboardViewModel() {
@@ -180,10 +181,9 @@ export function useDashboardViewModel() {
       resolveScopedCompanyIds(
         selectedCompanyIds,
         affectedCompaniesFilterMode,
-        selectedAffectedCompanyIds,
-        isAllCompaniesSelected
+        selectedAffectedCompanyIds
       ),
-    [selectedCompanyIds, affectedCompaniesFilterMode, selectedAffectedCompanyIds, isAllCompaniesSelected]
+    [selectedCompanyIds, affectedCompaniesFilterMode, selectedAffectedCompanyIds]
   )
 
   const scopedLogCompanyIds = useMemo(
@@ -191,10 +191,9 @@ export function useDashboardViewModel() {
       resolveScopedCompanyIds(
         selectedCompanyIds,
         logCompaniesFilterMode,
-        selectedLogCompanyIds,
-        isAllCompaniesSelected
+        selectedLogCompanyIds
       ),
-    [selectedCompanyIds, logCompaniesFilterMode, selectedLogCompanyIds, isAllCompaniesSelected]
+    [selectedCompanyIds, logCompaniesFilterMode, selectedLogCompanyIds]
   )
 
   const scopedStatsCompanyIds = useMemo(
@@ -202,10 +201,9 @@ export function useDashboardViewModel() {
       resolveScopedCompanyIds(
         selectedCompanyIds,
         statsCompaniesFilterMode,
-        selectedStatsCompanyIds,
-        isAllCompaniesSelected
+        selectedStatsCompanyIds
       ),
-    [selectedCompanyIds, statsCompaniesFilterMode, selectedStatsCompanyIds, isAllCompaniesSelected]
+    [selectedCompanyIds, statsCompaniesFilterMode, selectedStatsCompanyIds]
   )
 
   const loadCompanies = useCallback(async () => {
@@ -232,8 +230,34 @@ export function useDashboardViewModel() {
     }
   }, [])
 
+  const requestedCompanyIds = useMemo(() => {
+    const requested = new Set(selectedCompanyIds)
+
+    if (affectedCompaniesFilterMode === 'SELECT_COMPANIES') {
+      selectedAffectedCompanyIds.forEach((id) => requested.add(id))
+    }
+
+    if (logCompaniesFilterMode === 'SELECT_COMPANIES') {
+      selectedLogCompanyIds.forEach((id) => requested.add(id))
+    }
+
+    if (statsCompaniesFilterMode === 'SELECT_COMPANIES') {
+      selectedStatsCompanyIds.forEach((id) => requested.add(id))
+    }
+
+    return Array.from(requested)
+  }, [
+    selectedCompanyIds,
+    affectedCompaniesFilterMode,
+    selectedAffectedCompanyIds,
+    logCompaniesFilterMode,
+    selectedLogCompanyIds,
+    statsCompaniesFilterMode,
+    selectedStatsCompanyIds
+  ])
+
   const loadDashboardData = useCallback(async () => {
-    if (selectedCompanyIds.length === 0) {
+    if (requestedCompanyIds.length === 0) {
       setLogs([])
       setAlerts([])
       setAlertsForCorrelation([])
@@ -246,7 +270,7 @@ export function useDashboardViewModel() {
 
     try {
       const resultsByCompany = await Promise.all(
-        selectedCompanyIds.map(async (companyId) => {
+        requestedCompanyIds.map(async (companyId) => {
           const [alertsData, logsData] = await Promise.all([
             alertService.getAll(companyId),
             logService.getAll(companyId, `${startDate}T00:00:00`, `${endDate}T23:59:59`)
@@ -296,7 +320,15 @@ export function useDashboardViewModel() {
     } finally {
       setLoading(false)
     }
-  }, [selectedCompanyIds, scopedAlertCompanyIds, companies, isAllCompaniesSelected, startDate, endDate])
+  }, [
+    requestedCompanyIds,
+    selectedCompanyIds,
+    scopedAlertCompanyIds,
+    companies,
+    isAllCompaniesSelected,
+    startDate,
+    endDate
+  ])
 
   const closeAlert = async (alertId, payload) => {
     try {
@@ -338,16 +370,14 @@ export function useDashboardViewModel() {
     }
   }
 
-  const availableAlertCompanies = useMemo(() => {
-    if (!isAllCompaniesSelected) {
-      return []
-    }
-
-    return companies.map((company) => ({
-      id: String(company.id),
-      name: company.name ?? `Company ${company.id}`
-    }))
-  }, [companies, isAllCompaniesSelected])
+  const availableAlertCompanies = useMemo(
+    () =>
+      companies.map((company) => ({
+        id: String(company.id),
+        name: company.name ?? `Company ${company.id}`
+      })),
+    [companies]
+  )
 
   const filteredAlerts = useMemo(() => {
     let nextAlerts = alerts.filter((alert) => scopedAlertCompanyIds.includes(String(alert.companyId)))
@@ -376,7 +406,7 @@ export function useDashboardViewModel() {
       })
     }
 
-    if (isAllCompaniesSelected && affectedCompaniesFilterMode === 'SELECT_COMPANIES') {
+    if (affectedCompaniesFilterMode === 'SELECT_COMPANIES') {
       if (scopedAlertCompanyIds.length === 0) {
         return []
       }
@@ -881,17 +911,6 @@ export function useDashboardViewModel() {
   }, [scopedStatsAlerts, scopedStatsLogs])
 
   useEffect(() => {
-    if (!isAllCompaniesSelected) {
-      setSelectedAffectedCompanyIds([])
-      setAffectedCompaniesFilterMode('ALL_ALERTS')
-      setAffectedAlertsViewMode('ANY_SELECTED')
-      setSelectedLogCompanyIds([])
-      setLogCompaniesFilterMode('ALL_ALERTS')
-      setSelectedStatsCompanyIds([])
-      setStatsCompaniesFilterMode('ALL_ALERTS')
-      return
-    }
-
     setSelectedAffectedCompanyIds((current) =>
       current.filter((id) => availableAlertCompanies.some((company) => company.id === id))
     )
@@ -901,7 +920,7 @@ export function useDashboardViewModel() {
     setSelectedStatsCompanyIds((current) =>
       current.filter((id) => availableAlertCompanies.some((company) => company.id === id))
     )
-  }, [isAllCompaniesSelected, availableAlertCompanies])
+  }, [availableAlertCompanies])
 
   useEffect(() => {
     loadCompanies()
