@@ -1,9 +1,9 @@
 import axios from 'axios'
 
-const envBaseUrl = import.meta.env.VITE_API_BASE_URL?.trim()
-const normalizedBaseUrl = envBaseUrl
-  ? envBaseUrl.replace(/\/+$/, '')
-  : '/api'
+// Local-first setup:
+// Vite dev server proxies /api to the backend in localhost.
+// This keeps frontend code independent from deployed URLs.
+const normalizedBaseUrl = '/api'
 
 const api = axios.create({
   baseURL: normalizedBaseUrl,

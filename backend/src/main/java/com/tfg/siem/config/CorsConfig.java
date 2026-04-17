@@ -10,7 +10,7 @@ import java.util.Arrays;
 @Configuration
 public class CorsConfig implements WebMvcConfigurer {
 
-    @Value("${FRONTEND_ORIGINS:http://localhost:5173,https://tfg-siem.netlify.app,https://*.netlify.app}")
+    @Value("${FRONTEND_ORIGINS:http://localhost:5173}")
     private String frontendOrigins;
 
     @Override
